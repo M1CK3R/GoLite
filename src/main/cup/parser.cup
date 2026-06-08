@@ -1,0 +1,68 @@
+package olc1.golite;
+
+import java_cup.runtime.Symbol;
+
+import olc1.golite.ast.ASTNode;
+import olc1.golite.ast.exp.*;
+import olc1.golite.ast.stm.*;
+
+parser code
+{:
+    public void syntax_error(Symbol s) {
+        System.err.println("Error de sintaxis en la línea " + s.left + ", columna " + s.right);
+    }
+
+    public void unrecovered_syntax_error(Symbol s) {
+        System.err.println("Error de sintaxis no recuperable en la línea " + s.left + ", columna " + s.right);
+    }
+:}
+
+action code
+{:
+    String consola = "";
+:}
+
+terminal String string, integer, decimal;
+terminal lparen, rparen, lbrace, rbrace;
+terminal plus, minus, times, slash, UMENOS;
+terminal scol, assign;
+terminal String id;
+terminal imprimir, kwTrue, kwFalse, kwIf;
+
+nonterminal Statments INICIO;
+nonterminal Statments INSTRUCCIONES;
+nonterminal ASTNode INSTRUCCION;
+nonterminal ASTNode EXPRESION;
+
+precedence left plus, minus;
+precedence left times, slash;
+precedence right UMENOS;
+
+start with INICIO;
+
+// Gramatica
+
+INICIO ::= INSTRUCCIONES:i   {: RESULT = i; :}
+;
+
+INSTRUCCIONES ::= INSTRUCCIONES:is INSTRUCCION:i     {: is.add(i); RESULT = is; :}
+                | INSTRUCCION:i                      {: RESULT = new Statments(i); :}
+;
+
+INSTRUCCION ::= imprimir lparen EXPRESION:e rparen scol              {: RESULT = new Imprimir(e); :}
+                | id:n assign EXPRESION:e scol                          {: RESULT = new Assign(n, e, nleft, nright); :}
+                | kwIf lparen EXPRESION:c rparen lbrace INSTRUCCION:b rbrace {: RESULT = new IfNode(c, b); :}
+;
+
+EXPRESION ::= minus EXPRESION:a             {: RESULT = new Negate(a); :}%prec UMENOS
+            | EXPRESION:a plus EXPRESION:b  {: RESULT = new Add(a, b); :}
+            | EXPRESION:a minus EXPRESION:b {: RESULT = new Sub(a, b); :}
+            | EXPRESION:a times EXPRESION:b {: RESULT = new Mul(a, b); :}
+            | EXPRESION:a slash EXPRESION:b {: RESULT = new Div(a, b); :}
+            | lparen EXPRESION:e rparen     {: RESULT = new Paren(e); :}
+            | kwTrue:t                      {: RESULT = new BoolLiteral(true,  tleft, tright); :}
+            | kwFalse:f                     {: RESULT = new BoolLiteral(false, fleft, fright); :}
+            | id:n                          {: RESULT = new VarRef(n, nleft, nright); :}
+            | integer:e                     {: RESULT = new Integers(new Integer(e), eleft, eright); :}
+            | decimal:e                     {: RESULT = new Decimal(new Double(e),   eleft, eright); :}
+;
