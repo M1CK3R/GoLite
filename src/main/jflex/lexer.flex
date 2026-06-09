@@ -12,7 +12,6 @@ import java_cup.runtime.Symbol;
 %column // conteo de columnas
 %8bit  // recibir caracteres en formato UTF-8
 // %debug // Habilitar modo debug para ver el proceso de tokenización
-%ignorecase // ignorar mayusculas y minusculas
 
 %{
     // private Symbol symbol(int type) {
@@ -41,12 +40,13 @@ escape_char = \\ [\"\\nrt]
 normal_char = [^\"\\\n\r]
 str_lex = ({normal_char} | {escape_char})*
 rune_lex = '([^'\\\n\r]|\\.)'
+newline = \n
 
 %%
 
 // COmentarios
 "//" [^\n]*          { /* Ignorar comentarios de una línea */ }
-"/*" ~"*/"           { /* Ignorar comentarios multilínea */ }
+"/*" [^*]* "*"+ ([^*/] [^*]* "*"+)* "/" { /* Ignorar comentarios multilínea */ }
 
 // Numeros
 {digit}+\.{digit}+  { return new Symbol(sym.decimal, yyline, yycolumn, yytext()); }
@@ -66,7 +66,7 @@ rune_lex = '([^'\\\n\r]|\\.)'
 
 // Para los de asignacion
 "="     { return new Symbol(sym.assign, yyline, yycolumn, yytext()); }
-":="    { return new Symbol(sym.assign, yyline, yycolumn, yytext()); }
+":="    { return new Symbol(sym.walrus_assign, yyline, yycolumn, yytext()); }
 "+="    { return new Symbol(sym.plus_assign, yyline, yycolumn, yytext()); }
 "-="    { return new Symbol(sym.minus_assign, yyline, yycolumn, yytext()); }
 
@@ -84,7 +84,6 @@ rune_lex = '([^'\\\n\r]|\\.)'
 "!"     { return new Symbol(sym.not, yyline, yycolumn, yytext()); }
 
 // Key Words
-"imprimir"  { return new Symbol(sym.imprimir, yyline, yycolumn, yytext()); }
 "true"      { return new Symbol(sym.kwTrue,    yyline, yycolumn, yytext()); }
 "false"     { return new Symbol(sym.kwFalse,   yyline, yycolumn, yytext()); }
 "if"        { return new Symbol(sym.kwIf,      yyline, yycolumn, yytext()); }
