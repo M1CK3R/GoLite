@@ -3,15 +3,14 @@ package com.olc1.ast.stm;
 import com.olc1.ast.ASTNode;
 import com.olc1.visitor.Visitor;
 
-
-public class IfNode implements ASTNode {
+public class ElseIfPart implements ASTNode {
     private final ASTNode condition;
-    private final ASTNode body;      // bloque de instrucciones (Statments)
-    private final ASTNode elsePart;  // puede ser ElseIfPart, ElsePart o null
+    private final ASTNode body;
+    private final ASTNode elsePart;  // siguiente ElseIfPart, ElsePart o null
     private final int line;
     private final int column;
 
-    public IfNode(ASTNode condition, ASTNode body, ASTNode elsePart, int line, int column) {
+    public ElseIfPart(ASTNode condition, ASTNode body, ASTNode elsePart, int line, int column) {
         this.condition = condition;
         this.body = body;
         this.elsePart = elsePart;
@@ -26,7 +25,7 @@ public class IfNode implements ASTNode {
         public final int line;
         public final int column;
 
-        public Context(IfNode node) {
+        public Context(ElseIfPart node) {
             this.condition = node.condition;
             this.body = node.body;
             this.elsePart = node.elsePart;

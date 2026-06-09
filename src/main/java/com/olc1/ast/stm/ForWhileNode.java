@@ -3,18 +3,15 @@ package com.olc1.ast.stm;
 import com.olc1.ast.ASTNode;
 import com.olc1.visitor.Visitor;
 
-
-public class IfNode implements ASTNode {
+public class ForWhileNode implements ASTNode {
     private final ASTNode condition;
-    private final ASTNode body;      // bloque de instrucciones (Statments)
-    private final ASTNode elsePart;  // puede ser ElseIfPart, ElsePart o null
+    private final ASTNode body;
     private final int line;
     private final int column;
 
-    public IfNode(ASTNode condition, ASTNode body, ASTNode elsePart, int line, int column) {
+    public ForWhileNode(ASTNode condition, ASTNode body, int line, int column) {
         this.condition = condition;
         this.body = body;
-        this.elsePart = elsePart;
         this.line = line;
         this.column = column;
     }
@@ -22,14 +19,12 @@ public class IfNode implements ASTNode {
     public static class Context {
         public final ASTNode condition;
         public final ASTNode body;
-        public final ASTNode elsePart;
         public final int line;
         public final int column;
 
-        public Context(IfNode node) {
+        public Context(ForWhileNode node) {
             this.condition = node.condition;
             this.body = node.body;
-            this.elsePart = node.elsePart;
             this.line = node.line;
             this.column = node.column;
         }
