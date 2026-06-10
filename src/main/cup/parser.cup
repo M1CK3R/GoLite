@@ -84,14 +84,14 @@ INSTRUCCION ::=
     {: RESULT = new MinusAssign(n, e, nleft, nright); :}
     | kwIf EXPRESION:c lbrace INSTRUCCIONES:b rbrace ELSE_IF_ELSE:el
     {: RESULT = new IfNode(c, b, el, cleft, cright); :}
-    | kwFor SIMPLE_STMT:init scol EXPRESION:cond scol SIMPLE_STMT:incr lbrace INSTRUCCIONES:b rbrace
-    {: RESULT = new ForNode(init, cond, incr, b, forleft, forright); :}
-    | kwFor EXPRESION:cond lbrace INSTRUCCIONES:b rbrace
-    {: RESULT = new ForWhileNode(cond, b, forleft, forright); :}
-    | kwBreak scol
-    {: RESULT = new BreakNode(breakleft, breakright); :}
-    | kwContinue scol
-    {: RESULT = new ContinueNode(continueleft, continueright); :}
+    | kwFor:kFor SIMPLE_STMT:init scol EXPRESION:cond scol SIMPLE_STMT:incr lbrace INSTRUCCIONES:b rbrace
+    {: RESULT = new ForNode(init, cond, incr, b, kForleft, kForright); :}
+    | kwFor:kFor EXPRESION:cond lbrace INSTRUCCIONES:b rbrace
+    {: RESULT = new ForWhileNode(cond, b, kForleft, kForright); :}
+    | kwBreak:kBreak scol
+    {: RESULT = new BreakNode(kBreakleft, kBreakright); :}
+    | kwContinue:kContinue scol
+    {: RESULT = new ContinueNode(kContinueleft, kContinueright); :}
     | EXPRESION:e scol
     {: RESULT = new ExprStatment(e, eleft, eright); :}
     | lbrace INSTRUCCIONES:b rbrace
@@ -99,10 +99,10 @@ INSTRUCCION ::=
 ;
 
 ELSE_IF_ELSE ::=
-    kwElse kwIf EXPRESION:c lbrace INSTRUCCIONES:b rbrace ELSE_IF_ELSE:el
-    {: RESULT = new ElseIfPart(c, b, el, elseleft, elseright); :}
-    | kwElse lbrace INSTRUCCIONES:b rbrace
-    {: RESULT = new ElsePart(b, elseleft, elseright); :}
+    kwElse:kElse kwIf EXPRESION:c lbrace INSTRUCCIONES:b rbrace ELSE_IF_ELSE:el
+    {: RESULT = new ElseIfPart(c, b, el, kElseleft, kElseright); :}
+    | kwElse:kElse lbrace INSTRUCCIONES:b rbrace
+    {: RESULT = new ElsePart(b, kElseleft, kElseright); :}
     | /* vacío */
     {: RESULT = null; :}
 ;
@@ -181,12 +181,12 @@ EXPRESION ::=
     {: RESULT = new Decimal(Double.parseDouble(e), eleft, eright); :}
     | string:s
     {: RESULT = new StringLiteral(s, sleft, sright); :}
-    | fmt_println lparen ARGS:a rparen
+    | fmt_println:fmt lparen ARGS:a rparen
     {: RESULT = new FmtPrintln(a, fmtleft, fmtright); :}
-    | strconv_atoi lparen EXPRESION:e rparen
+    | strconv_atoi:str lparen EXPRESION:e rparen
     {: RESULT = new StrconvAtoi(e, strleft, strright); :}
-    | strconv_parsefloat lparen EXPRESION:e rparen
+    | strconv_parsefloat:str lparen EXPRESION:e rparen
     {: RESULT = new StrconvParseFloat(e, strleft, strright); :}
-    | reflect_typeof lparen EXPRESION:e rparen
+    | reflect_typeof:reflect lparen EXPRESION:e rparen
     {: RESULT = new ReflectTypeOf(e, reflectleft, reflectright); :}
 ;

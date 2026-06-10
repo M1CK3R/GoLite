@@ -9,6 +9,10 @@ import com.olc1.visitor.Visitor;
 public class Statments implements ASTNode {
     private final List<ASTNode> statements;
 
+    public Statments() {
+        this.statements = new ArrayList<>();
+    }
+
     public Statments(ASTNode statement) {
          this.statements = new ArrayList<>();
          this.statements.add(statement);

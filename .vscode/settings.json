@@ -1,3 +1,8 @@
 {
-    "java.configuration.updateBuildConfiguration": "interactive"
+    "java.configuration.updateBuildConfiguration": "interactive",
+    "java.project.sourcePaths": [
+        "src/main/java",
+        "target/generated-sources/cup",
+        "target/generated-sources/jflex"
+    ]
 }

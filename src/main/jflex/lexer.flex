@@ -122,7 +122,7 @@ newline = \n
 // ID - String
 {letter}({letter}|{digit})* { return new Symbol(sym.id, yyline, yycolumn, yytext()); }
 \"{str_lex}\"               { return new Symbol(sym.string, yyline, yycolumn, yytext()); }
-{rune_lex}              { return new Symbol(sym.rune, yyline, yycolumn, yytext()); }
+// {rune_lex}              { return new Symbol(sym.rune, yyline, yycolumn, yytext()); }
 
 
 // Ignorar
