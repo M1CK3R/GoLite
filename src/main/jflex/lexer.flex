@@ -1,5 +1,12 @@
+package com.olc1;
+
+import java.util.ArrayList;
+import java.util.List;
+
 // Importaciones necesarias
 import java_cup.runtime.Symbol;
+
+import com.olc1.reports.GoLiteError;
 
 %%
 
@@ -21,6 +28,9 @@ import java_cup.runtime.Symbol;
     // private Symbol symbol(int type, Object value) {
     //     return new Symbol(type, yyline, yycolumn, value);
     // }
+
+    public final List<GoLiteError> errors = new ArrayList<>();
+
 %}
 
 %init{
@@ -58,6 +68,7 @@ newline = \n
 "{"     { return new Symbol(sym.lbrace, yyline, yycolumn, yytext()); }
 "}"     { return new Symbol(sym.rbrace, yyline, yycolumn, yytext()); }
 ";"     { return new Symbol(sym.scol, yyline, yycolumn, yytext()); }
+","     { return new Symbol(sym.comma, yyline, yycolumn, yytext()); }
 "+"     { return new Symbol(sym.plus, yyline, yycolumn, yytext()); }
 "-"     { return new Symbol(sym.minus, yyline, yycolumn, yytext()); }
 "*"     { return new Symbol(sym.times, yyline, yycolumn, yytext()); }
@@ -91,6 +102,9 @@ newline = \n
 "var"       { return new Symbol(sym.kwVar,     yyline, yycolumn, yytext()); }
 "func"      { return new Symbol(sym.kwFunc,    yyline, yycolumn, yytext()); }
 "nil"       { return new Symbol(sym.kwNil,     yyline, yycolumn, yytext()); }
+"for"       { return new Symbol(sym.kwFor,      yyline, yycolumn, yytext()); }
+"break"     { return new Symbol(sym.kwBreak,    yyline, yycolumn, yytext()); }
+"continue"  { return new Symbol(sym.kwContinue, yyline, yycolumn, yytext()); }
 
 // Tipos de datos
 "int"       { return new Symbol(sym.kwInt,     yyline, yycolumn, yytext()); }

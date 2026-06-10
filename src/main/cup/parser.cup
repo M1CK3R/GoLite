@@ -1,68 +1,192 @@
-package olc1.golite;
+package com.olc1;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import java_cup.runtime.Symbol;
 
-import olc1.golite.ast.ASTNode;
-import olc1.golite.ast.exp.*;
-import olc1.golite.ast.stm.*;
+import com.olc1.ast.ASTNode;
+import com.olc1.ast.exp.*;
+import com.olc1.ast.stm.*;
+import com.olc1.reports.GoLiteError;
 
-parser code
-{:
+parser code {:
+    public List<GoLiteError> errors = new ArrayList<>();
+
     public void syntax_error(Symbol s) {
-        System.err.println("Error de sintaxis en la línea " + s.left + ", columna " + s.right);
+        errors.add(new GoLiteError("sintáctico", "Error de sintaxis", s.left, s.right));
     }
 
     public void unrecovered_syntax_error(Symbol s) {
-        System.err.println("Error de sintaxis no recuperable en la línea " + s.left + ", columna " + s.right);
+        errors.add(new GoLiteError("sintáctico", "Error sintáctico no recuperable", s.left, s.right));
     }
 :}
 
-action code
-{:
-    String consola = "";
-:}
-
-terminal String string, integer, decimal;
-terminal lparen, rparen, lbrace, rbrace;
-terminal plus, minus, times, slash, UMENOS;
-terminal scol, assign;
+terminal kwIf, kwElse, kwFor, kwBreak, kwContinue, kwVar, kwFunc, kwNil;
+terminal kwTrue, kwFalse;
+terminal UMINUS;
+terminal kwInt, kwFloat, kwBool, kwString, kwRune;
+terminal fmt_println, strconv_atoi, strconv_parsefloat, reflect_typeof;
+terminal walrus_assign, plus_assign, minus_assign;
+terminal eq, neq, leq, geq, lt, gt;
+terminal and, or, not;
+terminal plus, minus, times, slash, mod;
+terminal assign;
+terminal lparen, rparen, lbrace, rbrace, scol, comma;
 terminal String id;
-terminal imprimir, kwTrue, kwFalse, kwIf;
+terminal String integer;
+terminal String decimal;
+terminal String string;
 
-nonterminal Statments INICIO;
+nonterminal ASTNode INICIO, INSTRUCCION, EXPRESION, SIMPLE_STMT;
 nonterminal Statments INSTRUCCIONES;
-nonterminal ASTNode INSTRUCCION;
-nonterminal ASTNode EXPRESION;
+nonterminal ASTNode ELSE_IF_ELSE;
+nonterminal List<ASTNode> ARGS, LISTA_ARGS;
 
+precedence left or;
+precedence left and;
+precedence left eq, neq;
+precedence left lt, leq, gt, geq;
 precedence left plus, minus;
-precedence left times, slash;
-precedence right UMENOS;
+precedence left times, slash, mod;
+precedence right not, UMINUS;
 
 start with INICIO;
 
-// Gramatica
-
-INICIO ::= INSTRUCCIONES:i   {: RESULT = i; :}
+INICIO ::= INSTRUCCIONES:i
+    {: RESULT = i; :}
 ;
 
-INSTRUCCIONES ::= INSTRUCCIONES:is INSTRUCCION:i     {: is.add(i); RESULT = is; :}
-                | INSTRUCCION:i                      {: RESULT = new Statments(i); :}
+INSTRUCCIONES ::= INSTRUCCIONES:is INSTRUCCION:i
+    {: is.add(i); RESULT = is; :}
+    | /* vacío */
+    {: RESULT = new Statments(); :}
 ;
 
-INSTRUCCION ::= imprimir lparen EXPRESION:e rparen scol              {: RESULT = new Imprimir(e); :}
-                | id:n assign EXPRESION:e scol                          {: RESULT = new Assign(n, e, nleft, nright); :}
-                | kwIf lparen EXPRESION:c rparen lbrace INSTRUCCION:b rbrace {: RESULT = new IfNode(c, b); :}
+INSTRUCCION ::=
+    kwVar id:n kwInt scol
+    {: RESULT = new VarDecl(n, "int", null, nleft, nright); :}
+    | kwVar id:n kwFloat scol
+    {: RESULT = new VarDecl(n, "float64", null, nleft, nright); :}
+    | kwVar id:n kwBool scol
+    {: RESULT = new VarDecl(n, "bool", null, nleft, nright); :}
+    | kwVar id:n kwString scol
+    {: RESULT = new VarDecl(n, "string", null, nleft, nright); :}
+    | kwVar id:n kwRune scol
+    {: RESULT = new VarDecl(n, "rune", null, nleft, nright); :}
+    | id:n walrus_assign EXPRESION:e scol
+    {: RESULT = new ShortDecl(n, e, nleft, nright); :}
+    | id:n assign EXPRESION:e scol
+    {: RESULT = new Assign(n, e, nleft, nright); :}
+    | id:n plus_assign EXPRESION:e scol
+    {: RESULT = new PlusAssign(n, e, nleft, nright); :}
+    | id:n minus_assign EXPRESION:e scol
+    {: RESULT = new MinusAssign(n, e, nleft, nright); :}
+    | kwIf EXPRESION:c lbrace INSTRUCCIONES:b rbrace ELSE_IF_ELSE:el
+    {: RESULT = new IfNode(c, b, el, cleft, cright); :}
+    | kwFor SIMPLE_STMT:init scol EXPRESION:cond scol SIMPLE_STMT:incr lbrace INSTRUCCIONES:b rbrace
+    {: RESULT = new ForNode(init, cond, incr, b, forleft, forright); :}
+    | kwFor EXPRESION:cond lbrace INSTRUCCIONES:b rbrace
+    {: RESULT = new ForWhileNode(cond, b, forleft, forright); :}
+    | kwBreak scol
+    {: RESULT = new BreakNode(breakleft, breakright); :}
+    | kwContinue scol
+    {: RESULT = new ContinueNode(continueleft, continueright); :}
+    | EXPRESION:e scol
+    {: RESULT = new ExprStatment(e, eleft, eright); :}
+    | lbrace INSTRUCCIONES:b rbrace
+    {: RESULT = b; :}
 ;
 
-EXPRESION ::= minus EXPRESION:a             {: RESULT = new Negate(a); :}%prec UMENOS
-            | EXPRESION:a plus EXPRESION:b  {: RESULT = new Add(a, b); :}
-            | EXPRESION:a minus EXPRESION:b {: RESULT = new Sub(a, b); :}
-            | EXPRESION:a times EXPRESION:b {: RESULT = new Mul(a, b); :}
-            | EXPRESION:a slash EXPRESION:b {: RESULT = new Div(a, b); :}
-            | lparen EXPRESION:e rparen     {: RESULT = new Paren(e); :}
-            | kwTrue:t                      {: RESULT = new BoolLiteral(true,  tleft, tright); :}
-            | kwFalse:f                     {: RESULT = new BoolLiteral(false, fleft, fright); :}
-            | id:n                          {: RESULT = new VarRef(n, nleft, nright); :}
-            | integer:e                     {: RESULT = new Integers(new Integer(e), eleft, eright); :}
-            | decimal:e                     {: RESULT = new Decimal(new Double(e),   eleft, eright); :}
+ELSE_IF_ELSE ::=
+    kwElse kwIf EXPRESION:c lbrace INSTRUCCIONES:b rbrace ELSE_IF_ELSE:el
+    {: RESULT = new ElseIfPart(c, b, el, elseleft, elseright); :}
+    | kwElse lbrace INSTRUCCIONES:b rbrace
+    {: RESULT = new ElsePart(b, elseleft, elseright); :}
+    | /* vacío */
+    {: RESULT = null; :}
+;
+
+SIMPLE_STMT ::=
+    id:n assign EXPRESION:e
+    {: RESULT = new Assign(n, e, nleft, nright); :}
+    | id:n walrus_assign EXPRESION:e
+    {: RESULT = new ShortDecl(n, e, nleft, nright); :}
+    | id:n plus_assign EXPRESION:e
+    {: RESULT = new PlusAssign(n, e, nleft, nright); :}
+    | id:n minus_assign EXPRESION:e
+    {: RESULT = new MinusAssign(n, e, nleft, nright); :}
+    | EXPRESION:e
+    {: RESULT = new ExprStatment(e, eleft, eright); :}
+;
+
+ARGS ::=
+    EXPRESION:e LISTA_ARGS:l
+    {: l.add(0, e); RESULT = l; :}
+    | /* vacío */
+    {: RESULT = new ArrayList<ASTNode>(); :}
+;
+
+LISTA_ARGS ::=
+    comma EXPRESION:e LISTA_ARGS:l
+    {: l.add(0, e); RESULT = l; :}
+    | /* vacío */
+    {: RESULT = new ArrayList<ASTNode>(); :}
+;
+
+EXPRESION ::=
+    EXPRESION:a plus EXPRESION:b
+    {: RESULT = new Add(a, b); :}
+    | EXPRESION:a minus EXPRESION:b
+    {: RESULT = new Sub(a, b); :}
+    | EXPRESION:a times EXPRESION:b
+    {: RESULT = new Mul(a, b); :}
+    | EXPRESION:a slash EXPRESION:b
+    {: RESULT = new Div(a, b); :}
+    | EXPRESION:a mod EXPRESION:b
+    {: RESULT = new Mod(a, b); :}
+    | EXPRESION:a eq EXPRESION:b
+    {: RESULT = new Equ(a, b); :}
+    | EXPRESION:a neq EXPRESION:b
+    {: RESULT = new Nequ(a, b); :}
+    | EXPRESION:a lt EXPRESION:b
+    {: RESULT = new Lesser(a, b); :}
+    | EXPRESION:a leq EXPRESION:b
+    {: RESULT = new LesserEqu(a, b); :}
+    | EXPRESION:a gt EXPRESION:b
+    {: RESULT = new Greater(a, b); :}
+    | EXPRESION:a geq EXPRESION:b
+    {: RESULT = new GreaterEqu(a, b); :}
+    | EXPRESION:a and EXPRESION:b
+    {: RESULT = new And(a, b); :}
+    | EXPRESION:a or EXPRESION:b
+    {: RESULT = new Or(a, b); :}
+    | not EXPRESION:e
+    {: RESULT = new Not(e); :}
+    | minus EXPRESION:e 
+    {: RESULT = new Negate(e); :} %prec UMINUS
+    | lparen EXPRESION:e rparen
+    {: RESULT = new Paren(e); :}
+    | kwTrue:t
+    {: RESULT = new BoolLiteral(true, tleft, tright); :}
+    | kwFalse:f
+    {: RESULT = new BoolLiteral(false, fleft, fright); :}
+    | kwNil:n
+    {: RESULT = new NilLiteral(nleft, nright); :}
+    | id:n
+    {: RESULT = new VarRef(n, nleft, nright); :}
+    | integer:e
+    {: RESULT = new Integers(Integer.parseInt(e), eleft, eright); :}
+    | decimal:e
+    {: RESULT = new Decimal(Double.parseDouble(e), eleft, eright); :}
+    | string:s
+    {: RESULT = new StringLiteral(s, sleft, sright); :}
+    | fmt_println lparen ARGS:a rparen
+    {: RESULT = new FmtPrintln(a, fmtleft, fmtright); :}
+    | strconv_atoi lparen EXPRESION:e rparen
+    {: RESULT = new StrconvAtoi(e, strleft, strright); :}
+    | strconv_parsefloat lparen EXPRESION:e rparen
+    {: RESULT = new StrconvParseFloat(e, strleft, strright); :}
+    | reflect_typeof lparen EXPRESION:e rparen
+    {: RESULT = new ReflectTypeOf(e, reflectleft, reflectright); :}
 ;
