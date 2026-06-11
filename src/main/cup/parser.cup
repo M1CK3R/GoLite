@@ -30,7 +30,7 @@ terminal fmt_println, strconv_atoi, strconv_parsefloat, reflect_typeof;
 terminal walrus_assign, plus_assign, minus_assign;
 terminal eq, neq, leq, geq, lt, gt;
 terminal and, or, not;
-terminal plus, minus, times, slash, mod;
+terminal plus, minus, times, slash, mod, plusplus, minusminus;
 terminal assign;
 terminal lparen, rparen, lbrace, rbrace, scol, comma;
 terminal String id;
@@ -105,12 +105,18 @@ INSTRUCCION ::=
     {: RESULT = new PlusAssign(n, e, nleft, nright); :}
     | id:n minus_assign EXPRESION:e OP_SCOL
     {: RESULT = new MinusAssign(n, e, nleft, nright); :}
+    | id:n plusplus OP_SCOL
+    {: RESULT = new PlusAssign(n, new Integers(1, nleft, nright), nleft, nright); :}
+    | id:n minusminus OP_SCOL
+    {: RESULT = new MinusAssign(n, new Integers(1, nleft, nright), nleft, nright); :}
     | kwIf EXPRESION:c lbrace INSTRUCCIONES:b rbrace ELSE_IF_ELSE:el
     {: RESULT = new IfNode(c, b, el, cleft, cright); :}
     | kwFor:kFor SIMPLE_STMT:init scol EXPRESION:cond scol SIMPLE_STMT:incr lbrace INSTRUCCIONES:b rbrace
     {: RESULT = new ForNode(init, cond, incr, b, kForleft, kForright); :}
     | kwFor:kFor EXPRESION:cond lbrace INSTRUCCIONES:b rbrace
     {: RESULT = new ForWhileNode(cond, b, kForleft, kForright); :}
+    | kwFor:kFor lbrace INSTRUCCIONES:b rbrace
+    {: RESULT = new ForWhileNode(new BoolLiteral(true, kForleft, kForright), b, kForleft, kForright); :}
     | kwBreak:kBreak OP_SCOL
     {: RESULT = new BreakNode(kBreakleft, kBreakright); :}
     | kwContinue:kContinue OP_SCOL
@@ -139,6 +145,10 @@ SIMPLE_STMT ::=
     {: RESULT = new PlusAssign(n, e, nleft, nright); :}
     | id:n minus_assign EXPRESION:e
     {: RESULT = new MinusAssign(n, e, nleft, nright); :}
+    | id:n plusplus
+    {: RESULT = new PlusAssign(n, new Integers(1, nleft, nright), nleft, nright); :}
+    | id:n minusminus
+    {: RESULT = new MinusAssign(n, new Integers(1, nleft, nright), nleft, nright); :}
     | EXPRESION:e
     {: RESULT = new ExprStatment(e, eleft, eright); :}
 ;

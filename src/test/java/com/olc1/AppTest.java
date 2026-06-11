@@ -8,6 +8,8 @@ import org.junit.Test;
 import java.io.StringReader;
 import java.io.BufferedReader;
 import com.olc1.reports.GoLiteError;
+import com.olc1.ast.ASTNode;
+import com.olc1.visitor.interpreter.InterpreterVisitor;
 
 /**
  * Unit test for simple App.
@@ -52,5 +54,38 @@ public class AppTest
         }
         assertFalse("Syntactic errors list should not be empty", p.errors.isEmpty());
     }
+
+    @Test
+    public void testForLoopsAndIncrementDecrement() throws Exception {
+        String input = "n := 0\n" +
+                       "for n < 5 {\n" +
+                       "    fmt.Println(n)\n" +
+                       "    n++\n" +
+                       "}\n" +
+                       "\n" +
+                       "for {\n" +
+                       "    fmt.Println(n)\n" +
+                       "    n--\n" +
+                       "    if n < 4 {\n" +
+                       "        break\n" +
+                       "    }\n" +
+                       "}\n";
+        Lexer lexer = new Lexer(new BufferedReader(new StringReader(input)));
+        parser p = new parser(lexer);
+        ASTNode ast = (ASTNode) p.parse().value;
+
+        // Ensure no syntax errors
+        assertTrue("Should have no lexer errors", lexer.errors.isEmpty());
+        assertTrue("Should have no parser errors", p.errors.isEmpty());
+
+        InterpreterVisitor interpreter = new InterpreterVisitor();
+        interpreter.Visit(ast);
+        String output = interpreter.output;
+        System.out.println("Output of execution:\n" + output);
+
+        String expected = "0\n1\n2\n3\n4\n5\n4\n";
+        assertEquals(expected, output.replace("\r\n", "\n"));
+    }
 }
+
 

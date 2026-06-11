@@ -9,25 +9,26 @@ package com.olc1;
 public interface sym {
   /* terminals */
   public static final int slash = 37;
+  public static final int plusplus = 39;
   public static final int kwFor = 4;
   public static final int plus = 34;
   public static final int mod = 38;
-  public static final int lbrace = 42;
+  public static final int lbrace = 44;
   public static final int neq = 26;
   public static final int UMINUS = 12;
   public static final int kwFloat = 14;
   public static final int kwNil = 9;
   public static final int minus = 35;
   public static final int gt = 30;
-  public static final int rbrace = 43;
+  public static final int rbrace = 45;
   public static final int kwFalse = 11;
   public static final int kwIf = 2;
-  public static final int string = 49;
-  public static final int comma = 45;
+  public static final int string = 51;
+  public static final int comma = 47;
   public static final int reflect_typeof = 21;
   public static final int plus_assign = 23;
   public static final int leq = 27;
-  public static final int scol = 44;
+  public static final int scol = 46;
   public static final int minus_assign = 24;
   public static final int strconv_atoi = 19;
   public static final int kwString = 16;
@@ -39,24 +40,25 @@ public interface sym {
   public static final int times = 36;
   public static final int kwContinue = 6;
   public static final int or = 32;
-  public static final int lparen = 40;
-  public static final int integer = 47;
+  public static final int lparen = 42;
+  public static final int integer = 49;
   public static final int strconv_parsefloat = 20;
-  public static final int id = 46;
-  public static final int rparen = 41;
+  public static final int id = 48;
+  public static final int rparen = 43;
   public static final int kwTrue = 10;
   public static final int fmt_println = 18;
+  public static final int minusminus = 40;
   public static final int kwVar = 7;
   public static final int kwRune = 17;
   public static final int and = 31;
   public static final int not = 33;
   public static final int eq = 25;
-  public static final int assign = 39;
+  public static final int assign = 41;
   public static final int kwElse = 3;
   public static final int kwFunc = 8;
   public static final int geq = 28;
   public static final int kwBreak = 5;
-  public static final int decimal = 48;
+  public static final int decimal = 50;
   public static final int kwInt = 13;
   public static final String[] terminalNames = new String[] {
   "EOF",
@@ -98,6 +100,8 @@ public interface sym {
   "times",
   "slash",
   "mod",
+  "plusplus",
+  "minusminus",
   "assign",
   "lparen",
   "rparen",

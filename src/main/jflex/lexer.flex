@@ -69,6 +69,8 @@ newline = \n
 "}"     { return new Symbol(sym.rbrace, yyline, yycolumn, yytext()); }
 ";"     { return new Symbol(sym.scol, yyline, yycolumn, yytext()); }
 ","     { return new Symbol(sym.comma, yyline, yycolumn, yytext()); }
+"++"    { return new Symbol(sym.plusplus, yyline, yycolumn, yytext()); }
+"--"    { return new Symbol(sym.minusminus, yyline, yycolumn, yytext()); }
 "+"     { return new Symbol(sym.plus, yyline, yycolumn, yytext()); }
 "-"     { return new Symbol(sym.minus, yyline, yycolumn, yytext()); }
 "*"     { return new Symbol(sym.times, yyline, yycolumn, yytext()); }
