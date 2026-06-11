@@ -129,4 +129,4 @@ newline = \n
 {whitespace}    {/* pass */}
 
 // Errores lexicos
-.               { System.err.println("Error léxico en:'" + yytext() + "' en línea " + yyline + ", columna " + yycolumn); }
+.               { errors.add(new GoLiteError("léxico", "Caracter no reconocido: " + yytext(), yyline, yycolumn)); }

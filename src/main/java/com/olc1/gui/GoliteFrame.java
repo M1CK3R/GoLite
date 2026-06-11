@@ -12,6 +12,7 @@ import com.olc1.Lexer;
 import com.olc1.ast.ASTNode;
 import com.olc1.parser;
 import com.olc1.reports.GoLiteError;
+import com.olc1.reports.SymbolEntry;
 import com.olc1.visitor.interpreter.InterpreterVisitor;
 
 public class GoliteFrame extends JFrame{
@@ -19,6 +20,7 @@ public class GoliteFrame extends JFrame{
     private final JTextArea consoleTextArea;
     private Lexer lexer;
     private parser parser;
+    private InterpreterVisitor interpreter;
 
     public GoliteFrame() {
         setTitle("Golite");
@@ -46,8 +48,7 @@ public class GoliteFrame extends JFrame{
         menuBar.onClean(e -> cleanConsole());
         menuBar.onNew(e -> editorPanel.setText("fmt.Println(5+5);\n"));
         menuBar.onExit(e -> System.exit(0));
-        menuBar.onTokens(e -> {
-            /* TODO: reporte de tokens */ });
+        menuBar.onTokens(e -> { symbolTable(); });
         menuBar.onErrors(e -> { errors(); });
         menuBar.onAbout(e -> JOptionPane.showMessageDialog(
                 this,
@@ -63,7 +64,7 @@ public class GoliteFrame extends JFrame{
             parser = new parser(lexer);
 
             ASTNode ast = (ASTNode) parser.parse().value;
-            InterpreterVisitor interpreter = new InterpreterVisitor();
+            interpreter = new InterpreterVisitor();
             interpreter.Visit(ast);
 
             consoleTextArea.append(interpreter.output);
@@ -93,6 +94,29 @@ public class GoliteFrame extends JFrame{
         for (GoLiteError error : parser.errors) {
             consoleTextArea.append(error.toString() + "\n");
         }
+    }
+
+    private void symbolTable() {
+        cleanConsole();
+
+        if (interpreter == null) {
+            consoleTextArea.append("Aún no se ha ejecutado nada.\n");
+            return;
+        }
+
+        consoleTextArea.append("=== Reporte de Tabla de Símbolos ===\n\n");
+        consoleTextArea.append(SymbolEntry.tableHeader() + "\n");
+        consoleTextArea.append(SymbolEntry.tableSeparator() + "\n");
+
+        if (interpreter.symbolTable.isEmpty()) {
+            consoleTextArea.append("(No se encontraron símbolos declarados)\n");
+        } else {
+            for (SymbolEntry entry : interpreter.symbolTable) {
+                consoleTextArea.append(entry.toTableRow() + "\n");
+            }
+        }
+
+        consoleTextArea.append("\nTotal de símbolos: " + interpreter.symbolTable.size() + "\n");
     }
 
     private void cleanConsole() {

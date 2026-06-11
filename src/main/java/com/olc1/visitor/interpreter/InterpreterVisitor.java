@@ -1,6 +1,8 @@
 package com.olc1.visitor.interpreter;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import com.olc1.ast.ASTNode;
@@ -51,10 +53,12 @@ import com.olc1.visitor.interpreter.value.DecimalValue;
 import com.olc1.visitor.interpreter.value.IntValue;
 import com.olc1.visitor.interpreter.value.StringValue;
 import com.olc1.visitor.interpreter.value.ValueWrapper;
+import com.olc1.reports.SymbolEntry;
 import com.olc1.visitor.interpreter.value.VoidValue;
 
 public class InterpreterVisitor implements Visitor<ValueWrapper>{
     public String output = "";
+    public final List<SymbolEntry> symbolTable = new ArrayList<>();
     private final ValueWrapper defaultVoid = new VoidValue(-1, -1);
     private final Map<String, ValueWrapper> variables = new HashMap<>();
 
@@ -316,6 +320,7 @@ public class InterpreterVisitor implements Visitor<ValueWrapper>{
             }
         }
         variables.put(ctx.name, val);
+        symbolTable.add(new SymbolEntry(symbolTable.size() + 1, ctx.name, ctx.type, ctx.line, ctx.column));
         return defaultVoid;
     }
 
@@ -323,6 +328,7 @@ public class InterpreterVisitor implements Visitor<ValueWrapper>{
     public ValueWrapper visit(ShortDecl.Context ctx) {
         ValueWrapper val = Visit(ctx.value);
         variables.put(ctx.name, val);
+        symbolTable.add(new SymbolEntry(symbolTable.size() + 1, ctx.name, val.getTypeName(), ctx.line, ctx.column));
         return defaultVoid;    
     }
 

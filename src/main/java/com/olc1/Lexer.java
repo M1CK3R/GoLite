@@ -796,7 +796,7 @@ public class Lexer implements java_cup.runtime.Scanner {
       else {
         switch (zzAction < 0 ? zzAction : ZZ_ACTION[zzAction]) {
           case 1:
-            { System.err.println("Error léxico en:'" + yytext() + "' en línea " + yyline + ", columna " + yycolumn);
+            { errors.add(new GoLiteError("léxico", "Caracter no reconocido: " + yytext(), yyline, yycolumn));
             }
           // fall through
           case 52: break;
