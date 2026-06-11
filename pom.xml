@@ -88,7 +88,6 @@
           <groupId>de.jflex</groupId>
           <artifactId>jflex-maven-plugin</artifactId>
           <version>1.9.1</version>
-
           <executions>
             <execution>
               <goals>
@@ -96,11 +95,11 @@
               </goals>
             </execution>
           </executions>
-
           <configuration>
             <lexDefinitions>
                 <lexDefinition>src/main/jflex/lexer.flex</lexDefinition>
             </lexDefinitions>
+            <outputDirectory>src/main/java</outputDirectory>
           </configuration>
         </plugin>
 
@@ -115,10 +114,10 @@
               </goals>
             </execution>
           </executions>
-
           <configuration>
               <className>parser</className>
               <symbolsName>sym</symbolsName>
+              <outputDirectory>src/main/java</outputDirectory>
           </configuration>
         </plugin>
 
@@ -128,7 +127,7 @@
           <configuration>
               <mainClass>com.olc1.App</mainClass>
           </configuration>
-      </plugin>
+        </plugin>
     </plugins>
   </build>
 </project>

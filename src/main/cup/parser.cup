@@ -42,6 +42,7 @@ nonterminal ASTNode INICIO, INSTRUCCION, EXPRESION, SIMPLE_STMT;
 nonterminal Statments INSTRUCCIONES;
 nonterminal ASTNode ELSE_IF_ELSE;
 nonterminal List<ASTNode> ARGS, LISTA_ARGS;
+nonterminal Object OP_SCOL;
 
 precedence left or;
 precedence left and;
@@ -63,24 +64,46 @@ INSTRUCCIONES ::= INSTRUCCIONES:is INSTRUCCION:i
     {: RESULT = new Statments(); :}
 ;
 
+OP_SCOL ::= scol | /* vacío */ ;
+
 INSTRUCCION ::=
-    kwVar id:n kwInt scol
+    kwVar id:n kwInt OP_SCOL
     {: RESULT = new VarDecl(n, "int", null, nleft, nright); :}
-    | kwVar id:n kwFloat scol
+    | kwVar id:n kwInt assign EXPRESION:e OP_SCOL
+    {: RESULT = new VarDecl(n, "int", e, nleft, nright); :}
+    | kwVar id:n kwInt walrus_assign EXPRESION:e OP_SCOL
+    {: RESULT = new VarDecl(n, "int", e, nleft, nright); :}
+    | kwVar id:n kwFloat OP_SCOL
     {: RESULT = new VarDecl(n, "float64", null, nleft, nright); :}
-    | kwVar id:n kwBool scol
+    | kwVar id:n kwFloat assign EXPRESION:e OP_SCOL
+    {: RESULT = new VarDecl(n, "float64", e, nleft, nright); :}
+    | kwVar id:n kwFloat walrus_assign EXPRESION:e OP_SCOL
+    {: RESULT = new VarDecl(n, "float64", e, nleft, nright); :}
+    | kwVar id:n kwBool OP_SCOL
     {: RESULT = new VarDecl(n, "bool", null, nleft, nright); :}
-    | kwVar id:n kwString scol
+    | kwVar id:n kwBool assign EXPRESION:e OP_SCOL
+    {: RESULT = new VarDecl(n, "bool", e, nleft, nright); :}
+    | kwVar id:n kwBool walrus_assign EXPRESION:e OP_SCOL
+    {: RESULT = new VarDecl(n, "bool", e, nleft, nright); :}
+    | kwVar id:n kwString OP_SCOL
     {: RESULT = new VarDecl(n, "string", null, nleft, nright); :}
-    | kwVar id:n kwRune scol
+    | kwVar id:n kwString assign EXPRESION:e OP_SCOL
+    {: RESULT = new VarDecl(n, "string", e, nleft, nright); :}
+    | kwVar id:n kwString walrus_assign EXPRESION:e OP_SCOL
+    {: RESULT = new VarDecl(n, "string", e, nleft, nright); :}
+    | kwVar id:n kwRune OP_SCOL
     {: RESULT = new VarDecl(n, "rune", null, nleft, nright); :}
-    | id:n walrus_assign EXPRESION:e scol
+    | kwVar id:n kwRune assign EXPRESION:e OP_SCOL
+    {: RESULT = new VarDecl(n, "rune", e, nleft, nright); :}
+    | kwVar id:n kwRune walrus_assign EXPRESION:e OP_SCOL
+    {: RESULT = new VarDecl(n, "rune", e, nleft, nright); :}
+    | id:n walrus_assign EXPRESION:e OP_SCOL
     {: RESULT = new ShortDecl(n, e, nleft, nright); :}
-    | id:n assign EXPRESION:e scol
+    | id:n assign EXPRESION:e OP_SCOL
     {: RESULT = new Assign(n, e, nleft, nright); :}
-    | id:n plus_assign EXPRESION:e scol
+    | id:n plus_assign EXPRESION:e OP_SCOL
     {: RESULT = new PlusAssign(n, e, nleft, nright); :}
-    | id:n minus_assign EXPRESION:e scol
+    | id:n minus_assign EXPRESION:e OP_SCOL
     {: RESULT = new MinusAssign(n, e, nleft, nright); :}
     | kwIf EXPRESION:c lbrace INSTRUCCIONES:b rbrace ELSE_IF_ELSE:el
     {: RESULT = new IfNode(c, b, el, cleft, cright); :}
@@ -88,13 +111,13 @@ INSTRUCCION ::=
     {: RESULT = new ForNode(init, cond, incr, b, kForleft, kForright); :}
     | kwFor:kFor EXPRESION:cond lbrace INSTRUCCIONES:b rbrace
     {: RESULT = new ForWhileNode(cond, b, kForleft, kForright); :}
-    | kwBreak:kBreak scol
+    | kwBreak:kBreak OP_SCOL
     {: RESULT = new BreakNode(kBreakleft, kBreakright); :}
-    | kwContinue:kContinue scol
+    | kwContinue:kContinue OP_SCOL
     {: RESULT = new ContinueNode(kContinueleft, kContinueright); :}
-    | EXPRESION:e scol
+    | EXPRESION:e OP_SCOL
     {: RESULT = new ExprStatment(e, eleft, eright); :}
-    | lbrace INSTRUCCIONES:b rbrace
+    | lbrace INSTRUCCIONES:b rbrace OP_SCOL
     {: RESULT = b; :}
 ;
 
