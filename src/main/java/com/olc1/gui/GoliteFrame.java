@@ -1,8 +1,13 @@
 package com.olc1.gui;
 
+import java.awt.Desktop;
 import java.awt.Dimension;
 import java.io.BufferedReader;
+import java.io.File;
+import java.io.IOException;
 import java.io.StringReader;
+import java.util.ArrayList;
+import java.util.List;
 
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
@@ -11,6 +16,8 @@ import javax.swing.JTextArea;
 import com.olc1.Lexer;
 import com.olc1.ast.ASTNode;
 import com.olc1.parser;
+import com.olc1.reports.ErrorCollector;
+import com.olc1.reports.ErrorReportGenerator;
 import com.olc1.reports.GoLiteError;
 import com.olc1.reports.SymbolEntry;
 import com.olc1.visitor.interpreter.InterpreterVisitor;
@@ -76,23 +83,38 @@ public class GoliteFrame extends JFrame{
     }
 
     private void errors() {
-        cleanConsole();
-
         if (lexer == null || parser == null) {
-            consoleTextArea.append("Aún no se han ejecutado nada.\n");
+            JOptionPane.showMessageDialog(this,
+                    "Ejecuta el código primero antes de ver el reporte de errores.",
+                    "Sin ejecución", JOptionPane.WARNING_MESSAGE);
             return;
         }
 
-        consoleTextArea.append("Errores léxicos:\n");
+        List<GoLiteError> lexicErrors    = new ArrayList<>(lexer.errors);
+        List<GoLiteError> syntaxErrors   = new ArrayList<>(parser.errors);
+        List<GoLiteError> semanticErrors = new ArrayList<>(ErrorCollector.getErrors());
 
-        for (GoLiteError error : lexer.errors) {
-            consoleTextArea.append(error.toString() + "\n");
-        }
+        try {
+            File htmlFile = ErrorReportGenerator.generate(lexicErrors, syntaxErrors, semanticErrors);
 
-        consoleTextArea.append("\nErrores sintácticos:\n");
-
-        for (GoLiteError error : parser.errors) {
-            consoleTextArea.append(error.toString() + "\n");
+            if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.BROWSE)) {
+                Desktop.getDesktop().browse(htmlFile.toURI());
+                cleanConsole();
+                int total = lexicErrors.size() + syntaxErrors.size() + semanticErrors.size();
+                consoleTextArea.append("Reporte de errores generado.\n");
+                consoleTextArea.append("  Léxicos:    " + lexicErrors.size()    + "\n");
+                consoleTextArea.append("  Sintácticos: " + syntaxErrors.size()  + "\n");
+                consoleTextArea.append("  Semánticos: " + semanticErrors.size() + "\n");
+                consoleTextArea.append("  Total:       " + total                 + "\n");
+                consoleTextArea.append("\nEl reporte HTML se abrió en el navegador.\n");
+            } else {
+                cleanConsole();
+                consoleTextArea.append("Reporte generado en: " + htmlFile.getAbsolutePath() + "\n");
+                consoleTextArea.append("(Abre ese archivo manualmente en tu navegador)\n");
+            }
+        } catch (IOException ex) {
+            cleanConsole();
+            consoleTextArea.append("Error al generar el reporte HTML: " + ex.getMessage() + "\n");
         }
     }
 

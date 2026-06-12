@@ -13,8 +13,13 @@ public class GoLiteError {
         this.column = column;
     }
 
+    public String getType()        { return type; }
+    public String getDescription() { return description; }
+    public int    getLine()        { return line; }
+    public int    getColumn()      { return column; }
+
     @Override
     public String toString() {
         return String.format("Error %s: %s en la linea %d, columna %d", type, description, line, column);
-    }  
+    }
 }
