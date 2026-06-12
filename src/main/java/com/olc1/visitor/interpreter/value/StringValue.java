@@ -8,6 +8,6 @@ public record StringValue(String value, int line, int column) implements ValueWr
 
     @Override
     public String toString() {
-        return value.substring(1, value.length() - 1);
+        return value;
     }
 }

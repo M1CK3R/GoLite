@@ -119,11 +119,11 @@ newline = \n
 "fmt.Println"               { return new Symbol(sym.fmt_println, yyline, yycolumn, yytext()); }
 "strconv.Atoi"              { return new Symbol(sym.strconv_atoi, yyline, yycolumn, yytext()); }
 "strconv.ParseFloat"        { return new Symbol(sym.strconv_parsefloat, yyline, yycolumn, yytext()); }
-"reflect.TypeOf().string"   { return new Symbol(sym.reflect_typeof, yyline, yycolumn, yytext()); }
+"reflect.TypeOf"            { return new Symbol(sym.reflect_typeof, yyline, yycolumn, yytext()); }
 
 // ID - String
 {letter}({letter}|{digit})* { return new Symbol(sym.id, yyline, yycolumn, yytext()); }
-\"{str_lex}\"               { return new Symbol(sym.string, yyline, yycolumn, yytext()); }
+\"{str_lex}\"               { return new Symbol(sym.string, yyline, yycolumn, yytext().substring(1, yytext().length() - 1)); }
 {rune_lex}                  { return new Symbol(sym.rune, yyline, yycolumn, yytext()); }
 
 
