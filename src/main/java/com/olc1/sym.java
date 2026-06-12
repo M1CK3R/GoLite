@@ -27,6 +27,7 @@ public interface sym {
   public static final int comma = 47;
   public static final int reflect_typeof = 21;
   public static final int plus_assign = 23;
+  public static final int rune = 52;
   public static final int leq = 27;
   public static final int scol = 46;
   public static final int minus_assign = 24;
@@ -112,7 +113,8 @@ public interface sym {
   "id",
   "integer",
   "decimal",
-  "string"
+  "string",
+  "rune"
   };
 }
 

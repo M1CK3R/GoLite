@@ -37,6 +37,7 @@ terminal String id;
 terminal String integer;
 terminal String decimal;
 terminal String string;
+terminal String rune;
 
 nonterminal ASTNode INICIO, INSTRUCCION, EXPRESION, SIMPLE_STMT;
 nonterminal Statments INSTRUCCIONES;
@@ -222,4 +223,6 @@ EXPRESION ::=
     {: RESULT = new StrconvParseFloat(e, strleft, strright); :}
     | reflect_typeof:reflect lparen EXPRESION:e rparen
     {: RESULT = new ReflectTypeOf(e, reflectleft, reflectright); :}
+    | rune:r
+    {: RESULT = new RuneLiteral(r, rleft, rright); :}
 ;

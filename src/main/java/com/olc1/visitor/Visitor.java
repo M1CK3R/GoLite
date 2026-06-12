@@ -21,6 +21,7 @@ import com.olc1.ast.exp.Not;
 import com.olc1.ast.exp.Or;
 import com.olc1.ast.exp.Paren;
 import com.olc1.ast.exp.ReflectTypeOf;
+import com.olc1.ast.exp.RuneLiteral;
 import com.olc1.ast.exp.StrconvAtoi;
 import com.olc1.ast.exp.StrconvParseFloat;
 import com.olc1.ast.exp.StringLiteral;
@@ -84,4 +85,5 @@ public interface Visitor<T> {
     T visit(StrconvAtoi.Context ctx);
     T visit(StrconvParseFloat.Context ctx);
     T visit(ReflectTypeOf.Context ctx);
+    T visit(RuneLiteral.Context ctx);
 }

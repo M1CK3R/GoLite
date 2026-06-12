@@ -27,6 +27,7 @@ import com.olc1.ast.exp.Not;
 import com.olc1.ast.exp.Or;
 import com.olc1.ast.exp.Paren;
 import com.olc1.ast.exp.ReflectTypeOf;
+import com.olc1.ast.exp.RuneLiteral;
 import com.olc1.ast.exp.StrconvAtoi;
 import com.olc1.ast.exp.StrconvParseFloat;
 import com.olc1.ast.exp.StringLiteral;
@@ -51,6 +52,7 @@ import com.olc1.visitor.Visitor;
 import com.olc1.visitor.interpreter.value.BoolValue;
 import com.olc1.visitor.interpreter.value.DecimalValue;
 import com.olc1.visitor.interpreter.value.IntValue;
+import com.olc1.visitor.interpreter.value.RuneValue;
 import com.olc1.visitor.interpreter.value.StringValue;
 import com.olc1.visitor.interpreter.value.ValueWrapper;
 import com.olc1.reports.SymbolEntry;
@@ -92,6 +94,11 @@ public class InterpreterVisitor implements Visitor<ValueWrapper>{
     @Override
     public ValueWrapper visit(NilLiteral.Context ctx) {
         return new VoidValue(ctx.line, ctx.column); // o crea NilValue si lo tienes
+    }
+
+    @Override
+    public ValueWrapper visit(RuneLiteral.Context ctx) {
+        return new RuneValue(ctx.value, ctx.line, ctx.column);
     }
 
     // Para las expresiones aritmeticas
