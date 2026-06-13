@@ -63,7 +63,41 @@ public class InterpreterVisitor implements Visitor<ValueWrapper>{
     public String output = "";
     public final List<SymbolEntry> symbolTable = new ArrayList<>();
     private final ValueWrapper defaultVoid = new VoidValue(-1, -1);
-    private final Map<String, ValueWrapper> variables = new HashMap<>();
+    public static class Environment {
+        private final Environment parent;
+        private final Map<String, ValueWrapper> variables = new HashMap<>();
+
+        public Environment(Environment parent) {
+            this.parent = parent;
+        }
+
+        public void define(String name, ValueWrapper value) {
+            variables.put(name, value);
+        }
+
+        public ValueWrapper get(String name) {
+            if (variables.containsKey(name)) {
+                return variables.get(name);
+            }
+            if (parent != null) {
+                return parent.get(name);
+            }
+            return null;
+        }
+
+        public boolean assign(String name, ValueWrapper value) {
+            if (variables.containsKey(name)) {
+                variables.put(name, value);
+                return true;
+            }
+            if (parent != null) {
+                return parent.assign(name, value);
+            }
+            return false;
+        }
+    }
+
+    private Environment currentEnvironment = new Environment(null);
 
     public ValueWrapper Visit(ASTNode node) {
         return node.accept(this);
@@ -287,7 +321,7 @@ public class InterpreterVisitor implements Visitor<ValueWrapper>{
 
     @Override
     public ValueWrapper visit(VarRef.Context ctx) {
-        ValueWrapper val = variables.get(ctx.name);
+        ValueWrapper val = currentEnvironment.get(ctx.name);
         if (val == null) throw new RuntimeException("Variable no definida: " + ctx.name);
         return val;
     }
@@ -303,15 +337,21 @@ public class InterpreterVisitor implements Visitor<ValueWrapper>{
     // Sentencias
     @Override
     public ValueWrapper visit(Statments.Context ctx) {
-        for (ASTNode statment : ctx.statements) {
-            try {
-                Visit(statment);
-            } catch (BreakException | ContinueException e) {
-                throw e;
-            } catch (Exception e) {
-                int[] pos = getLineCol(statment);
-                ErrorCollector.addError("semántico", e.getMessage(), pos[0], pos[1]);
+        Environment oldEnv = currentEnvironment;
+        currentEnvironment = new Environment(oldEnv);
+        try {
+            for (ASTNode statment : ctx.statements) {
+                try {
+                    Visit(statment);
+                } catch (BreakException | ContinueException e) {
+                    throw e;
+                } catch (Exception e) {
+                    int[] pos = getLineCol(statment);
+                    ErrorCollector.addError("semántico", e.getMessage(), pos[0], pos[1]);
+                }
             }
+        } finally {
+            currentEnvironment = oldEnv;
         }
 
         return defaultVoid;
@@ -346,7 +386,7 @@ public class InterpreterVisitor implements Visitor<ValueWrapper>{
                 default: throw new RuntimeException("Tipo desconocido: " + ctx.type);
             }
         }
-        variables.put(ctx.name, val);
+        currentEnvironment.define(ctx.name, val);
         symbolTable.add(new SymbolEntry(symbolTable.size() + 1, ctx.name, ctx.type, ctx.line, ctx.column));
         return defaultVoid;
     }
@@ -354,7 +394,7 @@ public class InterpreterVisitor implements Visitor<ValueWrapper>{
     @Override
     public ValueWrapper visit(ShortDecl.Context ctx) {
         ValueWrapper val = Visit(ctx.value);
-        variables.put(ctx.name, val);
+        currentEnvironment.define(ctx.name, val);
         symbolTable.add(new SymbolEntry(symbolTable.size() + 1, ctx.name, val.getTypeName(), ctx.line, ctx.column));
         return defaultVoid;    
     }
@@ -362,15 +402,17 @@ public class InterpreterVisitor implements Visitor<ValueWrapper>{
     @Override
     public ValueWrapper visit(Assign.Context ctx) {
         ValueWrapper val = Visit(ctx.value);
-        if (!variables.containsKey(ctx.name))
+        if (!currentEnvironment.assign(ctx.name, val))
             throw new RuntimeException("Variable no declarada: " + ctx.name);
-        variables.put(ctx.name, val);
         return defaultVoid;
     }
 
     @Override
     public ValueWrapper visit(PlusAssign.Context ctx) {
-        ValueWrapper current = variables.get(ctx.name);
+        ValueWrapper current = currentEnvironment.get(ctx.name);
+        if (current == null) {
+            throw new RuntimeException("Variable no declarada: " + ctx.name);
+        }
         ValueWrapper increment = Visit(ctx.value);
         ValueWrapper result;
         if (current instanceof IntValue i && increment instanceof IntValue inc) {
@@ -384,13 +426,16 @@ public class InterpreterVisitor implements Visitor<ValueWrapper>{
         } else {
             throw new RuntimeException("Operacion += invalida: " + current.getTypeName() + " += " + increment.getTypeName());
         }
-        variables.put(ctx.name, result);
+        currentEnvironment.assign(ctx.name, result);
         return defaultVoid;    
     }
 
     @Override
     public ValueWrapper visit(MinusAssign.Context ctx) {
-        ValueWrapper current = variables.get(ctx.name);
+        ValueWrapper current = currentEnvironment.get(ctx.name);
+        if (current == null) {
+            throw new RuntimeException("Variable no declarada: " + ctx.name);
+        }
         ValueWrapper decrement = Visit(ctx.value);
         ValueWrapper result;
         if (current instanceof IntValue i && decrement instanceof IntValue dec) {
@@ -402,7 +447,7 @@ public class InterpreterVisitor implements Visitor<ValueWrapper>{
         } else {
             throw new RuntimeException("Operacion -= invalida: " + current.getTypeName() + " -= " + decrement.getTypeName());
         }
-        variables.put(ctx.name, result);
+        currentEnvironment.assign(ctx.name, result);
         return defaultVoid;    
     }
 
@@ -439,20 +484,27 @@ public class InterpreterVisitor implements Visitor<ValueWrapper>{
 
     @Override
     public ValueWrapper visit(ForNode.Context ctx) {
-        if (ctx.init != null) Visit(ctx.init);
-        while (true) {
-            ValueWrapper cond = Visit(ctx.condition);
-            if (cond instanceof BoolValue b && !b.value()) break;
-            try {
-                Visit(ctx.body);
-            } catch (BreakException e) {
-                break;
-            } catch (ContinueException e) {
-                // saltar al incremento
+        Environment oldEnv = currentEnvironment;
+        currentEnvironment = new Environment(oldEnv);
+        try {
+            if (ctx.init != null) Visit(ctx.init);
+            while (true) {
+                ValueWrapper cond = Visit(ctx.condition);
+                if (cond instanceof BoolValue b && !b.value()) break;
+                try {
+                    Visit(ctx.body);
+                } catch (BreakException e) {
+                    break;
+                } catch (ContinueException e) {
+                    // saltar al incremento
+                }
+                if (ctx.increment != null) Visit(ctx.increment);
             }
-            if (ctx.increment != null) Visit(ctx.increment);
+        } finally {
+            currentEnvironment = oldEnv;
         }
-        return defaultVoid;    }
+        return defaultVoid;
+    }
 
     @Override
     public ValueWrapper visit(ForWhileNode.Context ctx) {
