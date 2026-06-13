@@ -17,7 +17,7 @@ import com.olc1.reports.GoLiteError;
 %public // Paquete del lexer
 %line // conteo de lienas
 %column // conteo de columnas
-%8bit  // recibir caracteres en formato UTF-8
+%unicode  // soporte completo Unicode (necesario para caracteres fuera de ASCII)
 // %debug // Habilitar modo debug para ver el proceso de tokenización
 
 %{

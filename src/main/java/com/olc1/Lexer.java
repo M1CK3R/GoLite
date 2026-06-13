@@ -36,26 +36,69 @@ public class Lexer implements java_cup.runtime.Scanner {
   };
 
   /**
-   * Translates characters to character classes
+   * Top-level table for translating characters to character classes
    */
-  private static final char [] ZZ_CMAP = {
-     0,  0,  0,  0,  0,  0,  0,  0,  0,  1,  2,  3,  4,  5,  0,  0, 
-     0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0, 
-     1,  6,  7,  0,  0,  8,  9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 
-    19, 19, 19, 19, 20, 19, 21, 19, 19, 19, 22, 23, 24, 25, 26,  0, 
-     0, 27, 28, 28, 28, 28, 29, 28, 28, 28, 28, 28, 28, 28, 28, 30, 
-    31, 28, 28, 28, 32, 28, 28, 28, 28, 28, 28,  0, 33,  0,  0, 28, 
-     0, 34, 35, 36, 28, 37, 38, 39, 28, 40, 28, 41, 42, 43, 44, 45, 
-    46, 28, 47, 48, 49, 50, 51, 28, 28, 52, 28, 53, 54, 55,  0,  0, 
-     0,  0,  0,  0,  0,  3,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0, 
-     0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0, 
-     0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0, 
-     0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0, 
-     0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0, 
-     0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0, 
-     0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0, 
-     0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0
-  };
+  private static final int [] ZZ_CMAP_TOP = zzUnpackcmap_top();
+
+  private static final String ZZ_CMAP_TOP_PACKED_0 =
+    "\1\0\37\u0100\1\u0200\267\u0100\10\u0300\u1020\u0100";
+
+  private static int [] zzUnpackcmap_top() {
+    int [] result = new int[4352];
+    int offset = 0;
+    offset = zzUnpackcmap_top(ZZ_CMAP_TOP_PACKED_0, offset, result);
+    return result;
+  }
+
+  private static int zzUnpackcmap_top(String packed, int offset, int [] result) {
+    int i = 0;       /* index in packed string  */
+    int j = offset;  /* index in unpacked array */
+    int l = packed.length();
+    while (i < l) {
+      int count = packed.charAt(i++);
+      int value = packed.charAt(i++);
+      do result[j++] = value; while (--count > 0);
+    }
+    return j;
+  }
+
+
+  /**
+   * Second-level tables for translating characters to character classes
+   */
+  private static final int [] ZZ_CMAP_BLOCKS = zzUnpackcmap_blocks();
+
+  private static final String ZZ_CMAP_BLOCKS_PACKED_0 =
+    "\11\0\1\1\1\2\1\3\1\4\1\5\22\0\1\1"+
+    "\1\6\1\7\2\0\1\10\1\11\1\12\1\13\1\14"+
+    "\1\15\1\16\1\17\1\20\1\21\1\22\4\23\1\24"+
+    "\1\23\1\25\3\23\1\26\1\27\1\30\1\31\1\32"+
+    "\2\0\1\33\4\34\1\35\10\34\1\36\1\37\3\34"+
+    "\1\40\6\34\1\0\1\41\2\0\1\34\1\0\1\42"+
+    "\1\43\1\44\1\34\1\45\1\46\1\47\1\34\1\50"+
+    "\1\34\1\51\1\52\1\53\1\54\1\55\1\56\1\34"+
+    "\1\57\1\60\1\61\1\62\1\63\2\34\1\64\1\34"+
+    "\1\65\1\66\1\67\7\0\1\3\u01a2\0\2\3\326\0"+
+    "\u0100\3";
+
+  private static int [] zzUnpackcmap_blocks() {
+    int [] result = new int[1024];
+    int offset = 0;
+    offset = zzUnpackcmap_blocks(ZZ_CMAP_BLOCKS_PACKED_0, offset, result);
+    return result;
+  }
+
+  private static int zzUnpackcmap_blocks(String packed, int offset, int [] result) {
+    int i = 0;       /* index in packed string  */
+    int j = offset;  /* index in unpacked array */
+    int l = packed.length();
+    while (i < l) {
+      int count = packed.charAt(i++);
+      int value = packed.charAt(i++);
+      do result[j++] = value; while (--count > 0);
+    }
+    return j;
+  }
 
   /**
    * Translates DFA states to action switch labels.
@@ -395,7 +438,8 @@ public class Lexer implements java_cup.runtime.Scanner {
    * Translates raw input code points to DFA table row
    */
   private static int zzCMap(int input) {
-    return ZZ_CMAP[input];
+    int offset = input & 255;
+    return offset == input ? ZZ_CMAP_BLOCKS[offset] : ZZ_CMAP_BLOCKS[ZZ_CMAP_TOP[input >> 8] | offset];
   }
 
   /**
