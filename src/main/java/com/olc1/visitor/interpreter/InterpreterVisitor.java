@@ -56,6 +56,7 @@ import com.olc1.visitor.interpreter.value.RuneValue;
 import com.olc1.visitor.interpreter.value.StringValue;
 import com.olc1.visitor.interpreter.value.ValueWrapper;
 import com.olc1.reports.SymbolEntry;
+import com.olc1.reports.ErrorCollector;
 import com.olc1.visitor.interpreter.value.VoidValue;
 
 public class InterpreterVisitor implements Visitor<ValueWrapper>{
@@ -303,10 +304,29 @@ public class InterpreterVisitor implements Visitor<ValueWrapper>{
     @Override
     public ValueWrapper visit(Statments.Context ctx) {
         for (ASTNode statment : ctx.statements) {
-            Visit(statment);
+            try {
+                Visit(statment);
+            } catch (BreakException | ContinueException e) {
+                throw e;
+            } catch (Exception e) {
+                int[] pos = getLineCol(statment);
+                ErrorCollector.addError("semántico", e.getMessage(), pos[0], pos[1]);
+            }
         }
 
         return defaultVoid;
+    }
+
+    private int[] getLineCol(ASTNode node) {
+        try {
+            java.lang.reflect.Field lineField = node.getClass().getDeclaredField("line");
+            java.lang.reflect.Field colField = node.getClass().getDeclaredField("column");
+            lineField.setAccessible(true);
+            colField.setAccessible(true);
+            return new int[] { (int) lineField.get(node), (int) colField.get(node) };
+        } catch (Exception e) {
+            return new int[] { 0, 0 };
+        }
     }
 
     // Declaraciones y asignaciones

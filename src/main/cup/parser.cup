@@ -14,11 +14,15 @@ parser code {:
     public List<GoLiteError> errors = new ArrayList<>();
 
     public void syntax_error(Symbol s) {
-        errors.add(new GoLiteError("sintáctico", "Error de sintaxis", s.left, s.right));
+        String tok = s.value != null ? s.value.toString() : "";
+        errors.add(new GoLiteError("sintáctico",
+            "Token inesperado '" + tok + "'", s.left, s.right));
     }
 
-    public void unrecovered_syntax_error(Symbol s) {
-        errors.add(new GoLiteError("sintáctico", "Error sintáctico no recuperable", s.left, s.right));
+    public void unrecovered_syntax_error(Symbol s) throws Exception {
+        String tok = s.value != null ? s.value.toString() : "";
+        errors.add(new GoLiteError("sintáctico",
+            "Error sintáctico no recuperable cerca de '" + tok + "'", s.left, s.right));
     }
 :}
 
@@ -126,6 +130,10 @@ INSTRUCCION ::=
     {: RESULT = new ExprStatment(e, eleft, eright); :}
     | lbrace INSTRUCCIONES:b rbrace OP_SCOL
     {: RESULT = b; :}
+    | error rbrace
+    {: RESULT = new Statments(); :}
+    | error scol
+    {: RESULT = new Statments(); :}
 ;
 
 ELSE_IF_ELSE ::=

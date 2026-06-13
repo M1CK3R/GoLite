@@ -22,7 +22,7 @@ import com.olc1.reports.GoLiteError;
 import com.olc1.reports.SymbolEntry;
 import com.olc1.visitor.interpreter.InterpreterVisitor;
 
-public class GoliteFrame extends JFrame{
+public class GoliteFrame extends JFrame {
     private final EditorPanel editorPanel;
     private final JTextArea consoleTextArea;
     private Lexer lexer;
@@ -55,8 +55,12 @@ public class GoliteFrame extends JFrame{
         menuBar.onClean(e -> cleanConsole());
         menuBar.onNew(e -> editorPanel.setText("fmt.Println(5+5);\n"));
         menuBar.onExit(e -> System.exit(0));
-        menuBar.onTokens(e -> { symbolTable(); });
-        menuBar.onErrors(e -> { errors(); });
+        menuBar.onTokens(e -> {
+            symbolTable();
+        });
+        menuBar.onErrors(e -> {
+            errors();
+        });
         menuBar.onAbout(e -> JOptionPane.showMessageDialog(
                 this,
                 "GolLite\nVersión 1.0.0\nLaboratorio OLC1",
@@ -66,17 +70,31 @@ public class GoliteFrame extends JFrame{
 
     private void run() {
         cleanConsole(); // limpiamos antes de empezar
+        ErrorCollector.clear(); // limpiar errores semánticos previos
+
+        ASTNode ast = null;
         try {
             lexer = new Lexer(new BufferedReader(new StringReader(editorPanel.getText())));
             parser = new parser(lexer);
-
-            ASTNode ast = (ASTNode) parser.parse().value;
-            interpreter = new InterpreterVisitor();
-            interpreter.Visit(ast);
-
-            consoleTextArea.append(interpreter.output);
+            ast = (ASTNode) parser.parse().value;
         } catch (Exception e) {
-            consoleTextArea.append("Error: " + e.getMessage() + "\n");
+            // El parser ya registró los errores en parser.errors
+            // Si no pudo recuperarse, ast queda null
+        }
+
+        // Si se logró construir un AST (parcial o completo), intentar interpretar
+        if (ast != null) {
+            try {
+                interpreter = new InterpreterVisitor();
+                interpreter.Visit(ast);
+                consoleTextArea.append(interpreter.output);
+            } catch (Exception e) {
+                // Capturar errores semánticos/runtime y agregarlos al reporte silenciosamente
+                ErrorCollector.addError("semántico", e.getMessage(), 0, 0);
+                if (interpreter != null && !interpreter.output.isEmpty()) {
+                    consoleTextArea.append(interpreter.output);
+                }
+            }
         }
         consoleTextArea.setCaretPosition(consoleTextArea.getDocument().getLength());
         editorPanel.getTextArea().requestFocus();
@@ -90,8 +108,8 @@ public class GoliteFrame extends JFrame{
             return;
         }
 
-        List<GoLiteError> lexicErrors    = new ArrayList<>(lexer.errors);
-        List<GoLiteError> syntaxErrors   = new ArrayList<>(parser.errors);
+        List<GoLiteError> lexicErrors = new ArrayList<>(lexer.errors);
+        List<GoLiteError> syntaxErrors = new ArrayList<>(parser.errors);
         List<GoLiteError> semanticErrors = new ArrayList<>(ErrorCollector.getErrors());
 
         try {
@@ -102,10 +120,10 @@ public class GoliteFrame extends JFrame{
                 cleanConsole();
                 int total = lexicErrors.size() + syntaxErrors.size() + semanticErrors.size();
                 consoleTextArea.append("Reporte de errores generado.\n");
-                consoleTextArea.append("  Léxicos:    " + lexicErrors.size()    + "\n");
-                consoleTextArea.append("  Sintácticos: " + syntaxErrors.size()  + "\n");
+                consoleTextArea.append("  Léxicos:    " + lexicErrors.size() + "\n");
+                consoleTextArea.append("  Sintácticos: " + syntaxErrors.size() + "\n");
                 consoleTextArea.append("  Semánticos: " + semanticErrors.size() + "\n");
-                consoleTextArea.append("  Total:       " + total                 + "\n");
+                consoleTextArea.append("  Total:       " + total + "\n");
                 consoleTextArea.append("\nEl reporte HTML se abrió en el navegador.\n");
             } else {
                 cleanConsole();
