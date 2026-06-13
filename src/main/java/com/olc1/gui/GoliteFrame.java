@@ -4,14 +4,18 @@ import java.awt.Desktop;
 import java.awt.Dimension;
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.StringReader;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 import javax.swing.JTextArea;
+import javax.swing.filechooser.FileNameExtensionFilter;
 
 import com.olc1.Lexer;
 import com.olc1.ast.ASTNode;
@@ -53,7 +57,9 @@ public class GoliteFrame extends JFrame {
     private void wireActions(GoliteMenuBar menuBar) {
         menuBar.onRun(e -> run());
         menuBar.onClean(e -> cleanConsole());
-        menuBar.onNew(e -> editorPanel.setText("fmt.Println(5+5);\n"));
+        menuBar.onNew(e -> editorPanel.setText(""));
+        menuBar.onOpen(e -> openFile());
+        menuBar.onSave(e -> saveFile());
         menuBar.onExit(e -> System.exit(0));
         menuBar.onTokens(e -> {
             symbolTable();
@@ -66,6 +72,58 @@ public class GoliteFrame extends JFrame {
                 "GolLite\nVersión 1.0.0\nLaboratorio OLC1",
                 "Acerca de",
                 JOptionPane.INFORMATION_MESSAGE));
+    }
+
+    private void openFile() {
+        JFileChooser chooser = new JFileChooser();
+        chooser.setDialogTitle("Abrir archivo GoLite");
+        FileNameExtensionFilter filter = new FileNameExtensionFilter(
+                "Archivos de GoLite (*.glt)", "glt");
+        chooser.setFileFilter(filter);
+        chooser.setAcceptAllFileFilterUsed(true);
+
+        int result = chooser.showOpenDialog(this);
+        if (result == JFileChooser.APPROVE_OPTION) {
+            File file = chooser.getSelectedFile();
+            try {
+                String content = new String(Files.readAllBytes(file.toPath()));
+                editorPanel.setText(content);
+                setTitle("Golite — " + file.getName());
+            } catch (IOException ex) {
+                JOptionPane.showMessageDialog(this,
+                        "No se pudo leer el archivo:\n" + ex.getMessage(),
+                        "Error al abrir", JOptionPane.ERROR_MESSAGE);
+            }
+        }
+    }
+
+    private void saveFile() {
+        JFileChooser chooser = new JFileChooser();
+        chooser.setDialogTitle("Guardar archivo GoLite");
+        FileNameExtensionFilter filter = new FileNameExtensionFilter(
+                "Archivos GoLite (*.glt)", "glt");
+        chooser.setFileFilter(filter);
+        chooser.setAcceptAllFileFilterUsed(false);
+        chooser.setSelectedFile(new File("programa.glt"));
+        int result = chooser.showSaveDialog(this);
+        if (result == JFileChooser.APPROVE_OPTION) {
+            File file = chooser.getSelectedFile();
+            // Asegurar extensión .glt
+            if (!file.getName().toLowerCase().endsWith(".glt")) {
+                file = new File(file.getParentFile(), file.getName() + ".glt");
+            }
+            try {
+                Files.write(file.toPath(), editorPanel.getText().getBytes(java.nio.charset.StandardCharsets.UTF_8));
+                setTitle("Golite — " + file.getName());
+                JOptionPane.showMessageDialog(this,
+                        "Archivo guardado en:\n" + file.getAbsolutePath(),
+                        "Guardado", JOptionPane.INFORMATION_MESSAGE);
+            } catch (IOException ex) {
+                JOptionPane.showMessageDialog(this,
+                        "No se pudo guardar el archivo:\n" + ex.getMessage(),
+                        "Error al guardar", JOptionPane.ERROR_MESSAGE);
+            }
+        }
     }
 
     private void run() {

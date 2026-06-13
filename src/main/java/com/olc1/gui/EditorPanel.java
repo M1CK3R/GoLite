@@ -26,6 +26,17 @@ public class EditorPanel extends JPanel {
         textArea.setAutoIndentEnabled(true);
         textArea.setTabSize(4);
 
+        try {
+            org.fife.ui.rsyntaxtextarea.Theme theme = org.fife.ui.rsyntaxtextarea.Theme.load(
+                getClass().getResourceAsStream("/org/fife/ui/rsyntaxtextarea/themes/dark.xml")
+            );
+            theme.apply(textArea);
+        } catch (Exception e) {
+            textArea.setBackground(new Color(0x1e, 0x1e, 0x1e));
+            textArea.setForeground(Color.LIGHT_GRAY);
+            textArea.setCaretColor(Color.WHITE);
+        }
+
         RTextScrollPane scrollPane = new RTextScrollPane(textArea);
         add(scrollPane, BorderLayout.CENTER);
 

@@ -18,9 +18,9 @@ public class MainPanel extends JPanel {
 
         // Console setup
         consoleTextArea.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 13));
-        consoleTextArea.setBackground(Color.darkGray);
-        consoleTextArea.setForeground(Color.lightGray);
-        consoleTextArea.setCaretColor(Color.darkGray);
+        consoleTextArea.setBackground(new Color(0x1e, 0x1e, 0x1e));
+        consoleTextArea.setForeground(new Color(0xd4, 0xd4, 0xd4));
+        consoleTextArea.setCaretColor(Color.WHITE);
         consoleTextArea.setEditable(false);
         consoleTextArea.setBorder(new EmptyBorder(10, 10, 10, 10));
         consoleTextArea.setLineWrap(true);

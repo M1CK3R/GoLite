@@ -12,6 +12,8 @@ import javax.swing.JMenuItem;
 
 public class GoliteMenuBar extends JMenuBar {
     private final JMenuItem newItem;
+    private final JMenuItem openItem;
+    private final JMenuItem saveItem;
     private final JMenuItem exitItem;
     private final JButton runButton;
     private final JButton cleanButton;
@@ -27,8 +29,12 @@ public class GoliteMenuBar extends JMenuBar {
         JMenu helpMenu = new JMenu("Ayuda");
 
         newItem = new JMenuItem("Nuevo");
+        openItem = new JMenuItem("Abrir archivo");
+        saveItem = new JMenuItem("Guardar archivo");
         exitItem = new JMenuItem("Salir");
         fileMenu.add(newItem);
+        fileMenu.add(openItem);
+        fileMenu.add(saveItem);
         fileMenu.addSeparator();
         fileMenu.add(exitItem);
 
@@ -47,31 +53,45 @@ public class GoliteMenuBar extends JMenuBar {
         add(helpMenu);
     }
 
-    public void onRun(ActionListener l)    { runButton.addActionListener(l); }
-    public void onClean(ActionListener l)  { cleanButton.addActionListener(l); }
-    public void onNew(ActionListener l)    { newItem.addActionListener(l); }
-    public void onExit(ActionListener l)   { exitItem.addActionListener(l); }
-    public void onTokens(ActionListener l) { tokensItem.addActionListener(l); }
-    public void onErrors(ActionListener l) { errorsItem.addActionListener(l); }
-    public void onAbout(ActionListener l)  { aboutItem.addActionListener(l); }
+    public void onRun(ActionListener l) {
+        runButton.addActionListener(l);
+    }
+
+    public void onClean(ActionListener l) {
+        cleanButton.addActionListener(l);
+    }
+
+    public void onNew(ActionListener l) {
+        newItem.addActionListener(l);
+    }
+
+    public void onOpen(ActionListener l) {
+        openItem.addActionListener(l);
+    }
+
+    public void onSave(ActionListener l) {
+        saveItem.addActionListener(l);
+    }
+
+    public void onExit(ActionListener l) {
+        exitItem.addActionListener(l);
+    }
+
+    public void onTokens(ActionListener l) {
+        tokensItem.addActionListener(l);
+    }
+
+    public void onErrors(ActionListener l) {
+        errorsItem.addActionListener(l);
+    }
+
+    public void onAbout(ActionListener l) {
+        aboutItem.addActionListener(l);
+    }
 
     private static JButton createButton(String text) {
         JButton button = new JButton(text);
-        button.setFocusPainted(false);
-        button.setBorderPainted(false);
-        button.setContentAreaFilled(false);
-        button.setOpaque(false);
-        button.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mousePressed(MouseEvent e) {
-                button.setBackground(Color.LIGHT_GRAY);
-                button.setOpaque(true);
-            }
-            @Override
-            public void mouseReleased(MouseEvent e) {
-                button.setOpaque(false);
-            }
-        });
+        button.putClientProperty("JButton.buttonType", "toolBarButton");
         return button;
     }
 }

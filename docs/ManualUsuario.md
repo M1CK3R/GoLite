@@ -46,7 +46,9 @@ La aplicación abre una ventana con el editor de código en la parte superior y 
 
 ### 5.3 Barra de menú
 
-- `Archivo > Nuevo`: carga un ejemplo de código por defecto.
+- `Archivo > Nuevo`: carga un nuevo archivo en blanco.
+- `Archivo > Cargar Archivo`: carga un archivo de extensión .glt en la interfaz del editor de código.
+- `Archivo > Guardar archivo`: Guarda el archivo que se este trabajando actualmente con extension .glt.
 - `Archivo > Salir`: cierra la aplicación.
 - `Ejecutar`: procesa el código actual y muestra el resultado en la consola.
 - `Limpiar consola`: limpia la salida y muestra el encabezado inicial.

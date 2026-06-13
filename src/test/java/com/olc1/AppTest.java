@@ -155,6 +155,36 @@ public class AppTest
         assertEquals("10\nhola\n", output.replace("\r\n", "\n"));
         assertEquals("Should have registered 1 semantic error", 1, com.olc1.reports.ErrorCollector.getErrors().size());
     }
+
+    @Test
+    public void testVariableShadowingInNestedScopes() throws Exception {
+        String input = "x := 1;\n" +
+                       "{\n" +
+                       "    x := 2;\n" +
+                       "    {\n" +
+                       "        x := 3;\n" +
+                       "        {\n" +
+                       "            x := 4;\n" +
+                       "            fmt.Println(x);\n" +
+                       "        }\n" +
+                       "        fmt.Println(x);\n" +
+                       "    }\n" +
+                       "    fmt.Println(x);\n" +
+                       "}\n" +
+                       "fmt.Println(x);\n";
+        Lexer lexer = new Lexer(new BufferedReader(new StringReader(input)));
+        parser p = new parser(lexer);
+        
+        ASTNode ast = (ASTNode) p.parse().value;
+        
+        assertTrue("Should have no parser errors", p.errors.isEmpty());
+        
+        InterpreterVisitor interpreter = new InterpreterVisitor();
+        interpreter.Visit(ast);
+        String output = interpreter.output;
+        
+        assertEquals("4\n3\n2\n1\n", output.replace("\r\n", "\n"));
+    }
 }
 
 
