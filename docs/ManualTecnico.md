@@ -31,21 +31,7 @@ El compilador/intérprete de GoLite es una aplicación Java que implementa un an
 
 El proyecto sigue una arquitectura en capas clásica de compiladores:
 
-```
-┌─────────────────────────────────────────────────────┐
-│         Interfaz Gráfica (GUI - Swing)              │
-├─────────────────────────────────────────────────────┤
-│            Analizador Léxico (Lexer)                │
-├─────────────────────────────────────────────────────┤
-│         Analizador Sintáctico (Parser)              │
-├─────────────────────────────────────────────────────┤
-│     Árbol de Sintaxis Abstracta (AST)               │
-├─────────────────────────────────────────────────────┤
-│    Patrón Visitor - Intérprete/Análisis             │
-├─────────────────────────────────────────────────────┤
-│         Manejo de Errores y Reportes                │
-└─────────────────────────────────────────────────────┘
-```
+![Arquitectura de un Compilador](img/fasesCompi.png)
 
 ---
 
