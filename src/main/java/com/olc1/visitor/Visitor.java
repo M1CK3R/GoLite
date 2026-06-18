@@ -42,6 +42,8 @@ import com.olc1.ast.stm.PlusAssign;
 import com.olc1.ast.stm.ShortDecl;
 import com.olc1.ast.stm.Statments;
 import com.olc1.ast.stm.VarDecl;
+import com.olc1.ast.stm.SwitchNode;
+import com.olc1.ast.stm.CaseNode;
 
 public interface Visitor<T> {
     T visit(Integers.Context ctx);
@@ -86,4 +88,6 @@ public interface Visitor<T> {
     T visit(StrconvParseFloat.Context ctx);
     T visit(ReflectTypeOf.Context ctx);
     T visit(RuneLiteral.Context ctx);
+    T visit(SwitchNode.Context ctx);
+    T visit(CaseNode.Context ctx);
 }

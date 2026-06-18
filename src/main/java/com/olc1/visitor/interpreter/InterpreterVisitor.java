@@ -48,6 +48,8 @@ import com.olc1.ast.stm.PlusAssign;
 import com.olc1.ast.stm.ShortDecl;
 import com.olc1.ast.stm.Statments;
 import com.olc1.ast.stm.VarDecl;
+import com.olc1.ast.stm.SwitchNode;
+import com.olc1.ast.stm.CaseNode;
 import com.olc1.visitor.Visitor;
 import com.olc1.visitor.interpreter.value.BoolValue;
 import com.olc1.visitor.interpreter.value.DecimalValue;
@@ -147,6 +149,7 @@ public class InterpreterVisitor implements Visitor<ValueWrapper>{
             case IntValue     l when right instanceof DecimalValue r -> new DecimalValue(l.value() + r.value(), l.line(), l.column());
             case DecimalValue l when right instanceof IntValue     r -> new DecimalValue(l.value() + r.value(), l.line(), l.column());
             case DecimalValue l when right instanceof DecimalValue r -> new DecimalValue(l.value() + r.value(), l.line(), l.column());
+            case StringValue  l when right instanceof StringValue  r -> new StringValue(l.value() + r.value(), l.line(), l.column());
             default -> throw new RuntimeException("Operacion invalida: " + left.getTypeName() + " + " + right.getTypeName());
         };
     }
@@ -226,27 +229,42 @@ public class InterpreterVisitor implements Visitor<ValueWrapper>{
             return new BoolValue(floatCmp.test(l.value(), (double)r.value()), l.line(), l.column());
         if (left instanceof DecimalValue l && right instanceof DecimalValue r)
             return new BoolValue(floatCmp.test(l.value(), r.value()), l.line(), l.column());
+        if (left instanceof RuneValue l && right instanceof RuneValue r)
+            return new BoolValue(intCmp.test((int) l.value(), (int) r.value()), l.line(), l.column());
+        if (left instanceof RuneValue l && right instanceof IntValue r)
+            return new BoolValue(intCmp.test((int) l.value(), r.value()), l.line(), l.column());
+        if (left instanceof IntValue l && right instanceof RuneValue r)
+            return new BoolValue(intCmp.test(l.value(), (int) r.value()), l.line(), l.column());
         throw new RuntimeException("Operacion invalida: " + left.getTypeName() + " " + op + " " + right.getTypeName());
+    }
+
+    private boolean isEqual(ValueWrapper left, ValueWrapper right) {
+        if (left instanceof IntValue l && right instanceof IntValue r)
+            return l.value() == r.value();
+        if (left instanceof IntValue l && right instanceof DecimalValue r)
+            return l.value() == r.value();
+        if (left instanceof DecimalValue l && right instanceof IntValue r)
+            return l.value() == r.value();
+        if (left instanceof DecimalValue l && right instanceof DecimalValue r)
+            return l.value() == r.value();
+        if (left instanceof BoolValue l && right instanceof BoolValue r)
+            return l.value() == r.value();
+        if (left instanceof StringValue l && right instanceof StringValue r)
+            return l.value().equals(r.value());
+        if (left instanceof RuneValue l && right instanceof RuneValue r)
+            return l.value() == r.value();
+        if (left instanceof RuneValue l && right instanceof IntValue r)
+            return (int) l.value() == r.value();
+        if (left instanceof IntValue l && right instanceof RuneValue r)
+            return l.value() == (int) r.value();
+        throw new RuntimeException("Operacion invalida: " + left.getTypeName() + " == " + right.getTypeName());
     }
 
     @Override
     public ValueWrapper visit(Equ.Context ctx) {
         ValueWrapper left  = Visit(ctx.left);
         ValueWrapper right = Visit(ctx.right);
-        // conversiones implícitas según el enunciado
-        if (left instanceof IntValue l && right instanceof IntValue r)
-            return new BoolValue(l.value() == r.value(), l.line(), l.column());
-        if (left instanceof IntValue l && right instanceof DecimalValue r)
-            return new BoolValue(l.value() == r.value(), l.line(), l.column());
-        if (left instanceof DecimalValue l && right instanceof IntValue r)
-            return new BoolValue(l.value() == r.value(), l.line(), l.column());
-        if (left instanceof DecimalValue l && right instanceof DecimalValue r)
-            return new BoolValue(l.value() == r.value(), l.line(), l.column());
-        if (left instanceof BoolValue l && right instanceof BoolValue r)
-            return new BoolValue(l.value() == r.value(), l.line(), l.column());
-        if (left instanceof StringValue l && right instanceof StringValue r)
-            return new BoolValue(l.value().equals(r.value()), l.line(), l.column());
-        throw new RuntimeException("Operacion invalida: " + left.getTypeName() + " == " + right.getTypeName());
+        return new BoolValue(isEqual(left, right), left.line(), left.column());
     }
 
     @Override
@@ -588,7 +606,42 @@ public class InterpreterVisitor implements Visitor<ValueWrapper>{
         return Visit(ctx.expression);
     }
 
+    @Override
+    public ValueWrapper visit(SwitchNode.Context ctx) {
+        ValueWrapper switchVal = Visit(ctx.expression);
+        CaseNode defaultCase = null;
+        boolean matched = false;
 
+        try {
+            for (ASTNode caseNodeAST : ctx.cases) {
+                CaseNode caseNode = (CaseNode) caseNodeAST;
+                if (caseNode.getExpression() == null) {
+                    defaultCase = caseNode;
+                    continue;
+                }
+
+                ValueWrapper caseVal = Visit(caseNode.getExpression());
+                if (isEqual(switchVal, caseVal)) {
+                    Visit(caseNode.getBody());
+                    matched = true;
+                    break;
+                }
+            }
+
+            if (!matched && defaultCase != null) {
+                Visit(defaultCase.getBody());
+            }
+        } catch (BreakException e) {
+            // Un break dentro de un switch termina la ejecución del switch
+        }
+
+        return defaultVoid;
+    }
+
+    @Override
+    public ValueWrapper visit(CaseNode.Context ctx) {
+        return defaultVoid;
+    }
 
 }
 

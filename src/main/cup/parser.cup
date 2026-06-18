@@ -28,6 +28,7 @@ parser code {:
 
 terminal kwIf, kwElse, kwFor, kwBreak, kwContinue, kwVar, kwFunc, kwNil;
 terminal kwTrue, kwFalse;
+terminal kwSwitch, kwCase, kwDefault, colon;
 terminal UMINUS;
 terminal kwInt, kwFloat, kwBool, kwString, kwRune;
 terminal fmt_println, strconv_atoi, strconv_parsefloat, reflect_typeof;
@@ -46,6 +47,8 @@ terminal String rune;
 nonterminal ASTNode INICIO, INSTRUCCION, EXPRESION, SIMPLE_STMT;
 nonterminal Statments INSTRUCCIONES;
 nonterminal ASTNode ELSE_IF_ELSE;
+nonterminal List<ASTNode> CASE_LIST;
+nonterminal ASTNode CASE;
 nonterminal List<ASTNode> ARGS, LISTA_ARGS;
 nonterminal Object OP_SCOL;
 
@@ -130,6 +133,8 @@ INSTRUCCION ::=
     {: RESULT = new ExprStatment(e, eleft, eright); :}
     | lbrace INSTRUCCIONES:b rbrace OP_SCOL
     {: RESULT = b; :}
+    | kwSwitch:s EXPRESION:e lbrace CASE_LIST:cl rbrace
+    {: RESULT = new SwitchNode(e, cl, sleft, sright); :}
     | error rbrace
     {: RESULT = new Statments(); :}
     | error scol
@@ -143,6 +148,20 @@ ELSE_IF_ELSE ::=
     {: RESULT = new ElsePart(b, kElseleft, kElseright); :}
     | /* vacío */
     {: RESULT = null; :}
+;
+
+CASE_LIST ::=
+    CASE_LIST:cl CASE:c
+    {: cl.add(c); RESULT = cl; :}
+    | /* vacío */
+    {: RESULT = new ArrayList<ASTNode>(); :}
+;
+
+CASE ::=
+    kwCase EXPRESION:e colon INSTRUCCIONES:body
+    {: RESULT = new CaseNode(e, body, eleft, eright); :}
+    | kwDefault:d colon INSTRUCCIONES:body
+    {: RESULT = new CaseNode(null, body, dleft, dright); :}
 ;
 
 SIMPLE_STMT ::=

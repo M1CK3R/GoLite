@@ -68,6 +68,7 @@ newline = \n
 "{"     { return new Symbol(sym.lbrace, yyline, yycolumn, yytext()); }
 "}"     { return new Symbol(sym.rbrace, yyline, yycolumn, yytext()); }
 ";"     { return new Symbol(sym.scol, yyline, yycolumn, yytext()); }
+":"     { return new Symbol(sym.colon, yyline, yycolumn, yytext()); }
 ","     { return new Symbol(sym.comma, yyline, yycolumn, yytext()); }
 "++"    { return new Symbol(sym.plusplus, yyline, yycolumn, yytext()); }
 "--"    { return new Symbol(sym.minusminus, yyline, yycolumn, yytext()); }
@@ -107,6 +108,9 @@ newline = \n
 "for"       { return new Symbol(sym.kwFor,      yyline, yycolumn, yytext()); }
 "break"     { return new Symbol(sym.kwBreak,    yyline, yycolumn, yytext()); }
 "continue"  { return new Symbol(sym.kwContinue, yyline, yycolumn, yytext()); }
+"switch"    { return new Symbol(sym.kwSwitch,   yyline, yycolumn, yytext()); }
+"case"      { return new Symbol(sym.kwCase,     yyline, yycolumn, yytext()); }
+"default"   { return new Symbol(sym.kwDefault,  yyline, yycolumn, yytext()); }
 
 // Tipos de datos
 "int"       { return new Symbol(sym.kwInt,     yyline, yycolumn, yytext()); }

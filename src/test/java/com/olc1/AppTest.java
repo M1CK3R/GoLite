@@ -185,6 +185,87 @@ public class AppTest
         
         assertEquals("4\n3\n2\n1\n", output.replace("\r\n", "\n"));
     }
+
+    @Test
+    public void testRuneAndStringOperations() throws Exception {
+        com.olc1.reports.ErrorCollector.clear();
+        String input = "ptos1a := 0\n" +
+                       "var caracter rune = 'A'\n" +
+                       "if caracter == 'A' {\n" +
+                       "    ptos1a += 1\n" +
+                       "}\n" +
+                       "fmt.Println(ptos1a)\n" +
+                       "strGo := \"Go\"\n" +
+                       "strLite := \"Lite\"\n" +
+                       "concat1 := strGo + strLite\n" +
+                       "concat2 := \"Lenguaje: \" + strGo + strLite\n" +
+                       "fmt.Println(concat1)\n" +
+                       "fmt.Println(concat2)\n";
+        Lexer lexer = new Lexer(new BufferedReader(new StringReader(input)));
+        parser p = new parser(lexer);
+        
+        ASTNode ast = (ASTNode) p.parse().value;
+        
+        assertTrue("Should have no parser errors", p.errors.isEmpty());
+        
+        InterpreterVisitor interpreter = new InterpreterVisitor();
+        interpreter.Visit(ast);
+        String output = interpreter.output;
+        
+        assertEquals("1\nGoLite\nLenguaje: GoLite\n", output.replace("\r\n", "\n"));
+        assertTrue("Should have no semantic errors", com.olc1.reports.ErrorCollector.getErrors().isEmpty());
+    }
+
+    @Test
+    public void testSwitchCaseStatements() throws Exception {
+        com.olc1.reports.ErrorCollector.clear();
+        String input = 
+            "numero := 2\n" +
+            "switch numero {\n" +
+            "    case 1:\n" +
+            "        fmt.Println(\"Uno\")\n" +
+            "    case 2:\n" +
+            "        fmt.Println(\"Dos\")\n" +
+            "    case 3:\n" +
+            "        fmt.Println(\"Tres\")\n" +
+            "    default:\n" +
+            "        fmt.Println(\"default\")\n" +
+            "}\n" +
+            "\n" +
+            "switch 5 {\n" +
+            "    case 1:\n" +
+            "        fmt.Println(\"Uno\")\n" +
+            "    default:\n" +
+            "        fmt.Println(\"Default para 5\")\n" +
+            "}\n" +
+            "\n" +
+            "switch 10 {\n" +
+            "    case 1:\n" +
+            "        fmt.Println(\"No se imprime\")\n" +
+            "}\n" +
+            "\n" +
+            "switch 1 {\n" +
+            "    case 1:\n" +
+            "        fmt.Println(\"Inicio case 1\")\n" +
+            "        break\n" +
+            "        fmt.Println(\"No se debe imprimir tras break\")\n" +
+            "}\n";
+            
+        Lexer lexer = new Lexer(new BufferedReader(new StringReader(input)));
+        parser p = new parser(lexer);
+        
+        ASTNode ast = (ASTNode) p.parse().value;
+        
+        assertTrue("Should have no parser errors", p.errors.isEmpty());
+        
+        InterpreterVisitor interpreter = new InterpreterVisitor();
+        interpreter.Visit(ast);
+        String output = interpreter.output;
+        
+        String expected = "Dos\nDefault para 5\nInicio case 1\n";
+        assertEquals(expected, output.replace("\r\n", "\n"));
+        assertTrue("Should have no semantic errors", com.olc1.reports.ErrorCollector.getErrors().isEmpty());
+    }
 }
 
 
