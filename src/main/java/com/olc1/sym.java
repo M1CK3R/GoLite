@@ -11,6 +11,8 @@ public interface sym {
   public static final int slash = 41;
   public static final int plusplus = 43;
   public static final int kwFor = 4;
+  public static final int lbracket = 58;
+  public static final int kwReturn = 53;
   public static final int plus = 38;
   public static final int mod = 42;
   public static final int kwDefault = 14;
@@ -24,12 +26,14 @@ public interface sym {
   public static final int rbrace = 49;
   public static final int kwSwitch = 12;
   public static final int kwFalse = 11;
+  public static final int kwSlicesIndex = 55;
   public static final int kwIf = 2;
-  public static final int string = 55;
+  public static final int string = 65;
   public static final int comma = 51;
   public static final int reflect_typeof = 25;
   public static final int plus_assign = 27;
-  public static final int rune = 56;
+  public static final int rune = 66;
+  public static final int kwStringsJoin = 56;
   public static final int kwCase = 13;
   public static final int leq = 31;
   public static final int scol = 50;
@@ -37,7 +41,10 @@ public interface sym {
   public static final int strconv_atoi = 23;
   public static final int kwString = 20;
   public static final int walrus_assign = 26;
+  public static final int kwStruct = 52;
   public static final int EOF = 0;
+  public static final int kwType = 61;
+  public static final int rbracket = 59;
   public static final int error = 1;
   public static final int lt = 33;
   public static final int kwBool = 19;
@@ -46,9 +53,10 @@ public interface sym {
   public static final int kwContinue = 6;
   public static final int lparen = 46;
   public static final int colon = 15;
-  public static final int integer = 53;
+  public static final int integer = 63;
+  public static final int kwLen = 57;
   public static final int strconv_parsefloat = 24;
-  public static final int id = 52;
+  public static final int id = 62;
   public static final int rparen = 47;
   public static final int kwTrue = 10;
   public static final int fmt_println = 22;
@@ -59,11 +67,13 @@ public interface sym {
   public static final int and = 35;
   public static final int eq = 29;
   public static final int assign = 45;
+  public static final int kwAppend = 54;
   public static final int kwElse = 3;
   public static final int kwFunc = 8;
   public static final int geq = 32;
   public static final int kwBreak = 5;
-  public static final int decimal = 54;
+  public static final int decimal = 64;
+  public static final int dot = 60;
   public static final int kwInt = 17;
   public static final String[] terminalNames = new String[] {
   "EOF",
@@ -118,6 +128,16 @@ public interface sym {
   "rbrace",
   "scol",
   "comma",
+  "kwStruct",
+  "kwReturn",
+  "kwAppend",
+  "kwSlicesIndex",
+  "kwStringsJoin",
+  "kwLen",
+  "lbracket",
+  "rbracket",
+  "dot",
+  "kwType",
   "id",
   "integer",
   "decimal",

@@ -1,30 +1,31 @@
-package com.olc1.ast.stm;
+package com.olc1.ast.exp;
 
+import java.util.List;
 import com.olc1.ast.ASTNode;
 import com.olc1.visitor.Visitor;
 
-public class MinusAssign implements ASTNode {
-    private final ASTNode target;
-    private final ASTNode value;
+public class FuncCallNode implements ASTNode {
+    private final String name;
+    private final List<ASTNode> args;
     private final int line;
     private final int column;
 
-    public MinusAssign(ASTNode target, ASTNode value, int line, int column) {
-        this.target = target;
-        this.value = value;
+    public FuncCallNode(String name, List<ASTNode> args, int line, int column) {
+        this.name = name;
+        this.args = args;
         this.line = line;
         this.column = column;
     }
 
     public static class Context {
-        public final ASTNode target;
-        public final ASTNode value;
+        public final String name;
+        public final List<ASTNode> args;
         public final int line;
         public final int column;
 
-        public Context(MinusAssign node) {
-            this.target = node.target;
-            this.value = node.value;
+        public Context(FuncCallNode node) {
+            this.name = node.name;
+            this.args = node.args;
             this.line = node.line;
             this.column = node.column;
         }

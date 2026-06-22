@@ -1,30 +1,27 @@
-package com.olc1.ast.stm;
+package com.olc1.ast.exp;
 
+import java.util.List;
 import com.olc1.ast.ASTNode;
 import com.olc1.visitor.Visitor;
 
-public class MinusAssign implements ASTNode {
-    private final ASTNode target;
-    private final ASTNode value;
+public class BraceLiteralNode implements ASTNode {
+    private final List<ASTNode> elements;
     private final int line;
     private final int column;
 
-    public MinusAssign(ASTNode target, ASTNode value, int line, int column) {
-        this.target = target;
-        this.value = value;
+    public BraceLiteralNode(List<ASTNode> elements, int line, int column) {
+        this.elements = elements;
         this.line = line;
         this.column = column;
     }
 
     public static class Context {
-        public final ASTNode target;
-        public final ASTNode value;
+        public final List<ASTNode> elements;
         public final int line;
         public final int column;
 
-        public Context(MinusAssign node) {
-            this.target = node.target;
-            this.value = node.value;
+        public Context(BraceLiteralNode node) {
+            this.elements = node.elements;
             this.line = node.line;
             this.column = node.column;
         }

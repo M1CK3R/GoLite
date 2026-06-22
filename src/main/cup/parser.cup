@@ -38,6 +38,7 @@ terminal and, or, not;
 terminal plus, minus, times, slash, mod, plusplus, minusminus;
 terminal assign;
 terminal lparen, rparen, lbrace, rbrace, scol, comma;
+terminal kwStruct, kwReturn, kwAppend, kwSlicesIndex, kwStringsJoin, kwLen, lbracket, rbracket, dot, kwType;
 terminal String id;
 terminal String integer;
 terminal String decimal;
@@ -45,12 +46,22 @@ terminal String string;
 terminal String rune;
 
 nonterminal ASTNode INICIO, INSTRUCCION, EXPRESION, SIMPLE_STMT;
+nonterminal ASTNode ASSIGN_VALUE;
 nonterminal Statments INSTRUCCIONES;
 nonterminal ASTNode ELSE_IF_ELSE;
 nonterminal List<ASTNode> CASE_LIST;
 nonterminal ASTNode CASE;
 nonterminal List<ASTNode> ARGS, LISTA_ARGS;
 nonterminal Object OP_SCOL;
+nonterminal String TYPE;
+nonterminal String NON_ID_TYPE;
+nonterminal List<FieldDecl> FIELD_LIST;
+nonterminal FieldDecl FIELD_DECL;
+nonterminal List<Param> PARAM_LIST, PARAMS;
+nonterminal Param PARAM;
+nonterminal List<ASTNode> BRACE_CONTENT, BRACE_LIST;
+nonterminal ASTNode BRACE_ELEMENT;
+nonterminal String OPT_RETURN_TYPE;
 
 precedence left or;
 precedence left and;
@@ -59,6 +70,7 @@ precedence left lt, leq, gt, geq;
 precedence left plus, minus;
 precedence left times, slash, mod;
 precedence right not, UMINUS;
+precedence left dot, lbracket, rbracket, lparen, rparen;
 
 start with INICIO;
 
@@ -75,48 +87,44 @@ INSTRUCCIONES ::= INSTRUCCIONES:is INSTRUCCION:i
 OP_SCOL ::= scol | /* vacío */ ;
 
 INSTRUCCION ::=
-    kwVar id:n kwInt OP_SCOL
-    {: RESULT = new VarDecl(n, "int", null, nleft, nright); :}
-    | kwVar id:n kwInt assign EXPRESION:e OP_SCOL
-    {: RESULT = new VarDecl(n, "int", e, nleft, nright); :}
-    | kwVar id:n kwInt walrus_assign EXPRESION:e OP_SCOL
-    {: RESULT = new VarDecl(n, "int", e, nleft, nright); :}
-    | kwVar id:n kwFloat OP_SCOL
-    {: RESULT = new VarDecl(n, "float64", null, nleft, nright); :}
-    | kwVar id:n kwFloat assign EXPRESION:e OP_SCOL
-    {: RESULT = new VarDecl(n, "float64", e, nleft, nright); :}
-    | kwVar id:n kwFloat walrus_assign EXPRESION:e OP_SCOL
-    {: RESULT = new VarDecl(n, "float64", e, nleft, nright); :}
-    | kwVar id:n kwBool OP_SCOL
-    {: RESULT = new VarDecl(n, "bool", null, nleft, nright); :}
-    | kwVar id:n kwBool assign EXPRESION:e OP_SCOL
-    {: RESULT = new VarDecl(n, "bool", e, nleft, nright); :}
-    | kwVar id:n kwBool walrus_assign EXPRESION:e OP_SCOL
-    {: RESULT = new VarDecl(n, "bool", e, nleft, nright); :}
-    | kwVar id:n kwString OP_SCOL
-    {: RESULT = new VarDecl(n, "string", null, nleft, nright); :}
-    | kwVar id:n kwString assign EXPRESION:e OP_SCOL
-    {: RESULT = new VarDecl(n, "string", e, nleft, nright); :}
-    | kwVar id:n kwString walrus_assign EXPRESION:e OP_SCOL
-    {: RESULT = new VarDecl(n, "string", e, nleft, nright); :}
-    | kwVar id:n kwRune OP_SCOL
-    {: RESULT = new VarDecl(n, "rune", null, nleft, nright); :}
-    | kwVar id:n kwRune assign EXPRESION:e OP_SCOL
-    {: RESULT = new VarDecl(n, "rune", e, nleft, nright); :}
-    | kwVar id:n kwRune walrus_assign EXPRESION:e OP_SCOL
-    {: RESULT = new VarDecl(n, "rune", e, nleft, nright); :}
-    | id:n walrus_assign EXPRESION:e OP_SCOL
+    kwVar id:n TYPE:t OP_SCOL
+    {: RESULT = new VarDecl(n, t, null, nleft, nright); :}
+    | kwVar id:n TYPE:t assign ASSIGN_VALUE:e OP_SCOL
+    {: RESULT = new VarDecl(n, t, e, nleft, nright); :}
+    | kwVar id:n TYPE:t walrus_assign ASSIGN_VALUE:e OP_SCOL
+    {: RESULT = new VarDecl(n, t, e, nleft, nright); :}
+    | id:n walrus_assign ASSIGN_VALUE:e OP_SCOL
     {: RESULT = new ShortDecl(n, e, nleft, nright); :}
-    | id:n assign EXPRESION:e OP_SCOL
-    {: RESULT = new Assign(n, e, nleft, nright); :}
-    | id:n plus_assign EXPRESION:e OP_SCOL
-    {: RESULT = new PlusAssign(n, e, nleft, nright); :}
-    | id:n minus_assign EXPRESION:e OP_SCOL
-    {: RESULT = new MinusAssign(n, e, nleft, nright); :}
-    | id:n plusplus OP_SCOL
-    {: RESULT = new PlusAssign(n, new Integers(1, nleft, nright), nleft, nright); :}
-    | id:n minusminus OP_SCOL
-    {: RESULT = new MinusAssign(n, new Integers(1, nleft, nright), nleft, nright); :}
+    | EXPRESION:target assign ASSIGN_VALUE:e OP_SCOL
+    {: RESULT = new Assign(target, e, targetleft, targetright); :}
+    | EXPRESION:target plus_assign EXPRESION:e OP_SCOL
+    {: RESULT = new PlusAssign(target, e, targetleft, targetright); :}
+    | EXPRESION:target minus_assign EXPRESION:e OP_SCOL
+    {: RESULT = new MinusAssign(target, e, targetleft, targetright); :}
+    | EXPRESION:target plusplus OP_SCOL
+    {: RESULT = new PlusAssign(target, new Integers(1, targetleft, targetright), targetleft, targetright); :}
+    | EXPRESION:target minusminus OP_SCOL
+    {: RESULT = new MinusAssign(target, new Integers(1, targetleft, targetright), targetleft, targetright); :}
+    | kwType id:n kwStruct lbrace FIELD_LIST:fields rbrace OP_SCOL
+    {: RESULT = new StructDeclNode(n, fields, nleft, nright); :}
+    | kwStruct id:n lbrace FIELD_LIST:fields rbrace OP_SCOL
+    {: RESULT = new StructDeclNode(n, fields, nleft, nright); :}
+    | NON_ID_TYPE:t id:n assign ASSIGN_VALUE:e OP_SCOL
+    {: RESULT = new VarDecl(n, t, e, tleft, tright); :}
+    | NON_ID_TYPE:t id:n OP_SCOL
+    {: RESULT = new VarDecl(n, t, null, tleft, tright); :}
+    | id:t id:n assign ASSIGN_VALUE:e OP_SCOL
+    {: RESULT = new VarDecl(n, t, e, tleft, tright); :}
+    | id:t id:n OP_SCOL
+    {: RESULT = new VarDecl(n, t, null, tleft, tright); :}
+    | kwFunc id:n lparen PARAMS:p rparen OPT_RETURN_TYPE:ret lbrace INSTRUCCIONES:body rbrace OP_SCOL
+    {: RESULT = new FuncDeclNode(n, p, ret, body, nleft, nright); :}
+    | kwFunc lparen PARAM:r rparen id:n lparen PARAMS:p rparen OPT_RETURN_TYPE:ret lbrace INSTRUCCIONES:body rbrace OP_SCOL
+    {: RESULT = new MethodDeclNode(r, n, p, ret, body, rleft, rright); :}
+    | kwReturn:kReturn ASSIGN_VALUE:e OP_SCOL
+    {: RESULT = new ReturnNode(e, kReturnleft, kReturnright); :}
+    | kwReturn:kReturn OP_SCOL
+    {: RESULT = new ReturnNode(null, kReturnleft, kReturnright); :}
     | kwIf EXPRESION:c lbrace INSTRUCCIONES:b rbrace ELSE_IF_ELSE:el
     {: RESULT = new IfNode(c, b, el, cleft, cright); :}
     | kwFor:kFor SIMPLE_STMT:init scol EXPRESION:cond scol SIMPLE_STMT:incr lbrace INSTRUCCIONES:b rbrace
@@ -165,31 +173,35 @@ CASE ::=
 ;
 
 SIMPLE_STMT ::=
-    id:n assign EXPRESION:e
-    {: RESULT = new Assign(n, e, nleft, nright); :}
-    | id:n walrus_assign EXPRESION:e
+    EXPRESION:target assign ASSIGN_VALUE:e
+    {: RESULT = new Assign(target, e, targetleft, targetright); :}
+    | id:n walrus_assign ASSIGN_VALUE:e
     {: RESULT = new ShortDecl(n, e, nleft, nright); :}
-    | id:n plus_assign EXPRESION:e
-    {: RESULT = new PlusAssign(n, e, nleft, nright); :}
-    | id:n minus_assign EXPRESION:e
-    {: RESULT = new MinusAssign(n, e, nleft, nright); :}
-    | id:n plusplus
-    {: RESULT = new PlusAssign(n, new Integers(1, nleft, nright), nleft, nright); :}
-    | id:n minusminus
-    {: RESULT = new MinusAssign(n, new Integers(1, nleft, nright), nleft, nright); :}
+    | EXPRESION:target plus_assign EXPRESION:e
+    {: RESULT = new PlusAssign(target, e, targetleft, targetright); :}
+    | EXPRESION:target minus_assign EXPRESION:e
+    {: RESULT = new MinusAssign(target, e, targetleft, targetright); :}
+    | EXPRESION:target plusplus
+    {: RESULT = new PlusAssign(target, new Integers(1, targetleft, targetright), targetleft, targetright); :}
+    | EXPRESION:target minusminus
+    {: RESULT = new MinusAssign(target, new Integers(1, targetleft, targetright), targetleft, targetright); :}
     | EXPRESION:e
     {: RESULT = new ExprStatment(e, eleft, eright); :}
 ;
 
 ARGS ::=
-    EXPRESION:e LISTA_ARGS:l
+    id:t lbrace BRACE_CONTENT:c rbrace LISTA_ARGS:l
+    {: l.add(0, new StructLiteralNode(t, c, tleft, tright)); RESULT = l; :}
+    | EXPRESION:e LISTA_ARGS:l
     {: l.add(0, e); RESULT = l; :}
     | /* vacío */
     {: RESULT = new ArrayList<ASTNode>(); :}
 ;
 
 LISTA_ARGS ::=
-    comma EXPRESION:e LISTA_ARGS:l
+    comma id:t lbrace BRACE_CONTENT:c rbrace LISTA_ARGS:l
+    {: l.add(0, new StructLiteralNode(t, c, tleft, tright)); RESULT = l; :}
+    | comma EXPRESION:e LISTA_ARGS:l
     {: l.add(0, e); RESULT = l; :}
     | /* vacío */
     {: RESULT = new ArrayList<ASTNode>(); :}
@@ -252,4 +264,105 @@ EXPRESION ::=
     {: RESULT = new ReflectTypeOf(e, reflectleft, reflectright); :}
     | rune:r
     {: RESULT = new RuneLiteral(r, rleft, rright); :}
+    | id:name lparen ARGS:a rparen
+    {: RESULT = new FuncCallNode(name, a, nameleft, nameright); :}
+    | EXPRESION:target dot id:name lparen ARGS:a rparen
+    {: RESULT = new MethodCallNode(target, name, a, targetleft, targetright); :}
+    | EXPRESION:target dot id:name
+    {: RESULT = new FieldAccessNode(target, name, targetleft, targetright); :}
+    | EXPRESION:target lbracket EXPRESION:idx rbracket
+    {: RESULT = new SliceAccessNode(target, idx, targetleft, targetright); :}
+    | kwAppend:k lparen EXPRESION:s comma EXPRESION:v rparen
+    {: RESULT = new AppendNode(s, v, kleft, kright); :}
+    | kwSlicesIndex:k lparen EXPRESION:s comma EXPRESION:v rparen
+    {: RESULT = new SlicesIndexNode(s, v, kleft, kright); :}
+    | kwStringsJoin:k lparen EXPRESION:s comma EXPRESION:sep rparen
+    {: RESULT = new StringsJoinNode(s, sep, kleft, kright); :}
+    | kwLen:k lparen EXPRESION:s rparen
+    {: RESULT = new LenNode(s, kleft, kright); :}
+    | lbracket:l rbracket TYPE:t lbrace BRACE_CONTENT:c rbrace
+    {: RESULT = new SliceLiteralNode("[]" + t, c, lleft, lright); :}
+;
+
+ASSIGN_VALUE ::=
+    id:t lbrace BRACE_CONTENT:c rbrace
+    {: RESULT = new StructLiteralNode(t, c, tleft, tright); :}
+    | lbrace:l BRACE_CONTENT:c rbrace
+    {: RESULT = new BraceLiteralNode(c, lleft, lright); :}
+    | EXPRESION:e
+    {: RESULT = e; :}
+;
+
+NON_ID_TYPE ::= kwInt    {: RESULT = "int"; :}
+              | kwFloat  {: RESULT = "float64"; :}
+              | kwBool   {: RESULT = "bool"; :}
+              | kwString {: RESULT = "string"; :}
+              | kwRune   {: RESULT = "rune"; :}
+              | lbracket rbracket TYPE:t {: RESULT = "[]" + t; :}
+;
+
+TYPE ::= NON_ID_TYPE:t {: RESULT = t; :}
+       | id:name        {: RESULT = name; :}
+;
+
+FIELD_DECL ::= id:name TYPE:t OP_SCOL
+    {: RESULT = new FieldDecl(name, t); :}
+    | TYPE:t id:name OP_SCOL
+    {: RESULT = new FieldDecl(name, t); :}
+;
+
+FIELD_LIST ::= FIELD_LIST:l FIELD_DECL:f
+    {: l.add(f); RESULT = l; :}
+    | /* vacío */
+    {: RESULT = new ArrayList<FieldDecl>(); :}
+;
+
+PARAM ::= id:name TYPE:t
+    {: RESULT = new Param(name, t); :}
+;
+
+PARAMS ::= PARAM:p PARAM_LIST:l
+    {: l.add(0, p); RESULT = l; :}
+    | /* vacío */
+    {: RESULT = new ArrayList<Param>(); :}
+;
+
+PARAM_LIST ::= comma PARAM:p PARAM_LIST:l
+    {: l.add(0, p); RESULT = l; :}
+    | /* vacío */
+    {: RESULT = new ArrayList<Param>(); :}
+;
+
+BRACE_ELEMENT ::= EXPRESION:e
+    {: RESULT = e; :}
+    | id:name colon EXPRESION:e
+    {: RESULT = new FieldInit(name, e); :}
+    | id:t lbrace BRACE_CONTENT:c rbrace
+    {: RESULT = new StructLiteralNode(t, c, tleft, tright); :}
+    | id:name colon id:t lbrace BRACE_CONTENT:c rbrace
+    {: RESULT = new FieldInit(name, new StructLiteralNode(t, c, tleft, tright)); :}
+    | lbrace:l BRACE_CONTENT:c rbrace
+    {: RESULT = new BraceLiteralNode(c, lleft, lright); :}
+    | id:name colon lbrace:l BRACE_CONTENT:c rbrace
+    {: RESULT = new FieldInit(name, new BraceLiteralNode(c, lleft, lright)); :}
+;
+
+BRACE_CONTENT ::= BRACE_ELEMENT:e BRACE_LIST:l
+    {: l.add(0, e); RESULT = l; :}
+    | /* vacío */
+    {: RESULT = new ArrayList<ASTNode>(); :}
+;
+
+BRACE_LIST ::= comma BRACE_ELEMENT:e BRACE_LIST:l
+    {: l.add(0, e); RESULT = l; :}
+    | comma
+    {: RESULT = new ArrayList<ASTNode>(); :}
+    | /* vacío */
+    {: RESULT = new ArrayList<ASTNode>(); :}
+;
+
+OPT_RETURN_TYPE ::= TYPE:t
+    {: RESULT = t; :}
+    | /* vacío */
+    {: RESULT = null; :}
 ;

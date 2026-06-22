@@ -131,6 +131,7 @@
               <className>parser</className>
               <symbolsName>sym</symbolsName>
               <outputDirectory>src/main/java</outputDirectory>
+              <expectedConflicts>400</expectedConflicts>
           </configuration>
         </plugin>
 

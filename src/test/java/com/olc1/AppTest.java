@@ -76,6 +76,9 @@ public class AppTest
 
         // Ensure no syntax errors
         assertTrue("Should have no lexer errors", lexer.errors.isEmpty());
+        for (GoLiteError err : p.errors) {
+            System.out.println("PARSER ERROR in testForLoopsAndIncrementDecrement: " + err.getDescription() + " line " + err.getLine() + " col " + err.getColumn());
+        }
         assertTrue("Should have no parser errors", p.errors.isEmpty());
 
         InterpreterVisitor interpreter = new InterpreterVisitor();
@@ -266,6 +269,264 @@ public class AppTest
         assertEquals(expected, output.replace("\r\n", "\n"));
         assertTrue("Should have no semantic errors", com.olc1.reports.ErrorCollector.getErrors().isEmpty());
     }
+
+    @Test
+    public void testFunctionsSlicesAndStructsExample() throws Exception {
+        com.olc1.reports.ErrorCollector.clear();
+        String input =
+            "type Producto struct {\n" +
+            "    nombre string\n" +
+            "    precio float64\n" +
+            "}\n" +
+            "\n" +
+            "func actualizarProducto(p Producto, nuevoPrecio float64) {\n" +
+            "    p.precio = nuevoPrecio\n" +
+            "}\n" +
+            "\n" +
+            "func agregarElemento(s []int, elem int) []int {\n" +
+            "    return append(s, elem)\n" +
+            "}\n" +
+            "\n" +
+            "func main() {\n" +
+            "    prod := Producto{nombre: \"Laptop\", precio: 999.99}\n" +
+            "    fmt.Println(prod.nombre, prod.precio)\n" +
+            "    actualizarProducto(prod, 899.99)\n" +
+            "    fmt.Println(prod.precio)\n" +
+            "\n" +
+            "    numbers := []int{1, 2, 3}\n" +
+            "    fmt.Println(len(numbers))\n" +
+            "    numbers2 := agregarElemento(numbers, 4)\n" +
+            "    fmt.Println(len(numbers), len(numbers2))\n" +
+            "}\n";
+
+        Lexer lexer = new Lexer(new BufferedReader(new StringReader(input)));
+        parser p = new parser(lexer);
+        ASTNode ast = (ASTNode) p.parse().value;
+
+        assertTrue("Should have no parser errors", p.errors.isEmpty());
+
+        InterpreterVisitor interpreter = new InterpreterVisitor();
+        interpreter.Visit(ast);
+        String output = interpreter.output;
+
+        String expected = "Laptop 999.99\n899.99\n3\n3 4\n";
+        assertEquals(expected, output.replace("\r\n", "\n"));
+    }
+
+    @Test
+    public void testStructMethodsByReference() throws Exception {
+        com.olc1.reports.ErrorCollector.clear();
+        String input =
+            "type Persona struct {\n" +
+            "    nombre string\n" +
+            "    edad int\n" +
+            "}\n" +
+            "\n" +
+            "func (p Persona) CumplirAnios() {\n" +
+            "    p.edad = p.edad + 1\n" +
+            "}\n" +
+            "\n" +
+            "func main() {\n" +
+            "    pers := Persona{nombre: \"Juan\", edad: 25}\n" +
+            "    pers.CumplirAnios()\n" +
+            "    fmt.Println(pers.nombre, pers.edad)\n" +
+            "}\n";
+
+        Lexer lexer = new Lexer(new BufferedReader(new StringReader(input)));
+        parser p = new parser(lexer);
+        ASTNode ast = (ASTNode) p.parse().value;
+
+        assertTrue("Should have no parser errors", p.errors.isEmpty());
+
+        InterpreterVisitor interpreter = new InterpreterVisitor();
+        interpreter.Visit(ast);
+        String output = interpreter.output;
+
+        assertEquals("Juan 26\n", output.replace("\r\n", "\n"));
+    }
+
+    @Test
+    public void testSlicesAndMatrices() throws Exception {
+        com.olc1.reports.ErrorCollector.clear();
+        String input =
+            "func main() {\n" +
+            "    var matrix [][]int\n" +
+            "    row1 := []int{1, 2}\n" +
+            "    row2 := []int{3, 4}\n" +
+            "    matrix = [][]int{row1, row2}\n" +
+            "    fmt.Println(matrix[0][0], matrix[0][1])\n" +
+            "    fmt.Println(matrix[1][0], matrix[1][1])\n" +
+            "    matrix[1][1] = 5\n" +
+            "    fmt.Println(matrix[1][1])\n" +
+            "}\n";
+
+        Lexer lexer = new Lexer(new BufferedReader(new StringReader(input)));
+        parser p = new parser(lexer);
+        ASTNode ast = (ASTNode) p.parse().value;
+
+        assertTrue("Should have no parser errors", p.errors.isEmpty());
+
+        InterpreterVisitor interpreter = new InterpreterVisitor();
+        interpreter.Visit(ast);
+        String output = interpreter.output;
+
+        assertEquals("1 2\n3 4\n5\n", output.replace("\r\n", "\n"));
+    }
+
+    @Test
+    public void testBuiltInFunctions() throws Exception {
+        com.olc1.reports.ErrorCollector.clear();
+        String input =
+            "func main() {\n" +
+            "    names := []string{\"Alice\", \"Bob\", \"Charlie\"}\n" +
+            "    fmt.Println(len(names))\n" +
+            "    fmt.Println(slices.Index(names, \"Bob\"))\n" +
+            "    fmt.Println(slices.Index(names, \"Dave\"))\n" +
+            "    joined := strings.Join(names, \"-\")\n" +
+            "    fmt.Println(joined)\n" +
+            "}\n";
+
+        Lexer lexer = new Lexer(new BufferedReader(new StringReader(input)));
+        parser p = new parser(lexer);
+        ASTNode ast = (ASTNode) p.parse().value;
+
+        assertTrue("Should have no parser errors", p.errors.isEmpty());
+
+        InterpreterVisitor interpreter = new InterpreterVisitor();
+        interpreter.Visit(ast);
+        String output = interpreter.output;
+
+        assertEquals("3\n1\n-1\nAlice-Bob-Charlie\n", output.replace("\r\n", "\n"));
+    }
+
+    @Test
+    public void testCStyleStructSyntax() throws Exception {
+        com.olc1.reports.ErrorCollector.clear();
+        String input =
+            "struct Persona {\n" +
+            "    string Nombre;\n" +
+            "    int Edad;\n" +
+            "    bool EsEstudiante;\n" +
+            "}\n" +
+            "Persona miInstancia = { Nombre: \"Alice\", Edad: 25, EsEstudiante: false };\n" +
+            "string nombre = miInstancia.Nombre;\n" +
+            "miInstancia.Nombre = \"Bob\";\n" +
+            "miInstancia.Edad = 30;\n" +
+            "fmt.Println(miInstancia.Edad)\n" +
+            "fmt.Println(miInstancia.Nombre)\n" +
+            "fmt.Println(nombre)\n";
+
+        Lexer lexer = new Lexer(new BufferedReader(new StringReader(input)));
+        parser p = new parser(lexer);
+        ASTNode ast = (ASTNode) p.parse().value;
+
+        for (GoLiteError err : p.errors) {
+            System.out.println("PARSER ERROR in testCStyleStructSyntax: " + err.getDescription());
+        }
+        assertTrue("Should have no parser errors", p.errors.isEmpty());
+
+        InterpreterVisitor interpreter = new InterpreterVisitor();
+        interpreter.Visit(ast);
+        String output = interpreter.output;
+
+        for (GoLiteError err : com.olc1.reports.ErrorCollector.getErrors()) {
+            System.out.println("SEMANTIC ERROR in testCStyleStructSyntax: " + err.getDescription());
+        }
+        System.out.println("Output: [" + output + "]");
+        assertEquals("30\nBob\nAlice\n", output.replace("\r\n", "\n"));
+        assertTrue("Should have no semantic errors", com.olc1.reports.ErrorCollector.getErrors().isEmpty());
+    }
+
+    @Test
+    public void testMultiDimensionalSliceLiteral() throws Exception {
+        com.olc1.reports.ErrorCollector.clear();
+        String input =
+            "mtx2 := [][]int{\n" +
+            "    {0, 0, 0},\n" +
+            "    {0, 0, 0},\n" +
+            "    {0, 0, 0},\n" +
+            "}\n" +
+            "mtx2[0][0] = 7\n" +
+            "mtx2[0][1] = 6\n" +
+            "mtx2[0][2] = 5\n" +
+            "fmt.Println(mtx2[0][1])\n";
+
+        Lexer lexer = new Lexer(new BufferedReader(new StringReader(input)));
+        parser p = new parser(lexer);
+        ASTNode ast = (ASTNode) p.parse().value;
+
+        for (GoLiteError err : p.errors) {
+            System.out.println("PARSER ERROR in testMultiDimensionalSliceLiteral: " + err.getDescription());
+        }
+        assertTrue("Should have no parser errors", p.errors.isEmpty());
+
+        InterpreterVisitor interpreter = new InterpreterVisitor();
+        interpreter.Visit(ast);
+        String output = interpreter.output;
+
+        for (GoLiteError err : com.olc1.reports.ErrorCollector.getErrors()) {
+            System.out.println("SEMANTIC ERROR in testMultiDimensionalSliceLiteral: " + err.getDescription());
+        }
+        assertTrue("Should have no semantic errors", com.olc1.reports.ErrorCollector.getErrors().isEmpty());
+        assertEquals("6\n", output.replace("\r\n", "\n"));
+    }
+
+    @Test
+    public void testUserCodeWithFuncCorrected() throws Exception {
+        com.olc1.reports.ErrorCollector.clear();
+        String input =
+            "struct Producto {\n" +
+            "    int id;\n" +
+            "    string nombre;\n" +
+            "}\n" +
+            "// Función que devuelve un valor entero func\n" +
+            "func obtenerNumero() int {\n" +
+            "    return 42;\n" +
+            "}\n" +
+            "func imprimirMensaje() {\n" +
+            "    fmt.Println(\"Hola, GoLite!\");\n" +
+            "}\n" +
+            "func sumar(a int, b int) int {\n" +
+            "    return a + b;\n" +
+            "}\n" +
+            "func actualizarProducto(p Producto, nuevoNombre string) {\n" +
+            "    p.nombre = nuevoNombre;\n" +
+            "}\n" +
+            "func agregarElemento(slice []int, valor int) []int {\n" +
+            "    return append(slice, valor);\n" +
+            "}\n" +
+            "func main() {\n" +
+            "    fmt.Println(obtenerNumero());\n" +
+            "    imprimirMensaje();\n" +
+            "    fmt.Println(sumar(5, 10));\n" +
+            "    Producto p = { id: 1, nombre: \"Producto A\" };\n" +
+            "    actualizarProducto(p, \"Producto B\");\n" +
+            "    fmt.Println(p.nombre);\n" +
+            "    numeros := []int{1, 2, 3};\n" +
+            "    numeros = agregarElemento(numeros, 4);\n" +
+            "    fmt.Println(numeros);\n" +
+            "}\n";
+
+        Lexer lexer = new Lexer(new BufferedReader(new StringReader(input)));
+        parser p = new parser(lexer);
+        ASTNode ast = (ASTNode) p.parse().value;
+
+        for (GoLiteError err : p.errors) {
+            System.out.println("PARSER ERROR in testUserCodeWithFuncCorrected: " + err.getDescription() + " at line " + err.getLine() + ", column " + err.getColumn());
+        }
+        assertTrue("Should have no parser errors", p.errors.isEmpty());
+
+        InterpreterVisitor interpreter = new InterpreterVisitor();
+        interpreter.Visit(ast);
+        String output = interpreter.output;
+
+        for (GoLiteError err : com.olc1.reports.ErrorCollector.getErrors()) {
+            System.out.println("SEMANTIC ERROR in testUserCodeWithFuncCorrected: " + err.getDescription());
+        }
+        assertTrue("Should have no semantic errors", com.olc1.reports.ErrorCollector.getErrors().isEmpty());
+        assertEquals("42\nHola, GoLite!\n15\nProducto B\n[1, 2, 3, 4]\n", output.replace("\r\n", "\n"));
+    }
 }
+
 
 

@@ -44,6 +44,21 @@ import com.olc1.ast.stm.Statments;
 import com.olc1.ast.stm.VarDecl;
 import com.olc1.ast.stm.SwitchNode;
 import com.olc1.ast.stm.CaseNode;
+import com.olc1.ast.stm.FuncDeclNode;
+import com.olc1.ast.stm.MethodDeclNode;
+import com.olc1.ast.stm.ReturnNode;
+import com.olc1.ast.stm.StructDeclNode;
+import com.olc1.ast.exp.FuncCallNode;
+import com.olc1.ast.exp.MethodCallNode;
+import com.olc1.ast.exp.FieldAccessNode;
+import com.olc1.ast.exp.SliceAccessNode;
+import com.olc1.ast.exp.SliceLiteralNode;
+import com.olc1.ast.exp.BraceLiteralNode;
+import com.olc1.ast.exp.StructLiteralNode;
+import com.olc1.ast.exp.AppendNode;
+import com.olc1.ast.exp.SlicesIndexNode;
+import com.olc1.ast.exp.StringsJoinNode;
+import com.olc1.ast.exp.LenNode;
 
 public interface Visitor<T> {
     T visit(Integers.Context ctx);
@@ -90,4 +105,19 @@ public interface Visitor<T> {
     T visit(RuneLiteral.Context ctx);
     T visit(SwitchNode.Context ctx);
     T visit(CaseNode.Context ctx);
+    T visit(FuncDeclNode.Context ctx);
+    T visit(MethodDeclNode.Context ctx);
+    T visit(ReturnNode.Context ctx);
+    T visit(StructDeclNode.Context ctx);
+    T visit(FuncCallNode.Context ctx);
+    T visit(MethodCallNode.Context ctx);
+    T visit(FieldAccessNode.Context ctx);
+    T visit(SliceAccessNode.Context ctx);
+    T visit(SliceLiteralNode.Context ctx);
+    T visit(BraceLiteralNode.Context ctx);
+    T visit(StructLiteralNode.Context ctx);
+    T visit(AppendNode.Context ctx);
+    T visit(SlicesIndexNode.Context ctx);
+    T visit(StringsJoinNode.Context ctx);
+    T visit(LenNode.Context ctx);
 }
