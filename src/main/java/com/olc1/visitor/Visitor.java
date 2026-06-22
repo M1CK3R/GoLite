@@ -1,123 +1,126 @@
 package com.olc1.visitor;
 
-import com.olc1.ast.exp.Add;
-import com.olc1.ast.exp.And;
-import com.olc1.ast.exp.BoolLiteral;
-import com.olc1.ast.exp.Decimal;
-import com.olc1.ast.exp.Div;
-import com.olc1.ast.exp.Equ;
-import com.olc1.ast.exp.FmtPrintln;
-import com.olc1.ast.exp.Greater;
-import com.olc1.ast.exp.GreaterEqu;
-import com.olc1.ast.exp.Integers;
-import com.olc1.ast.exp.Lesser;
-import com.olc1.ast.exp.LesserEqu;
-import com.olc1.ast.exp.Mod;
-import com.olc1.ast.exp.Mul;
-import com.olc1.ast.exp.Negate;
-import com.olc1.ast.exp.Nequ;
-import com.olc1.ast.exp.NilLiteral;
-import com.olc1.ast.exp.Not;
-import com.olc1.ast.exp.Or;
-import com.olc1.ast.exp.Paren;
-import com.olc1.ast.exp.ReflectTypeOf;
-import com.olc1.ast.exp.RuneLiteral;
-import com.olc1.ast.exp.StrconvAtoi;
-import com.olc1.ast.exp.StrconvParseFloat;
-import com.olc1.ast.exp.StringLiteral;
-import com.olc1.ast.exp.Sub;
-import com.olc1.ast.exp.VarRef;
-import com.olc1.ast.stm.Assign;
-import com.olc1.ast.stm.BreakNode;
-import com.olc1.ast.stm.ContinueNode;
-import com.olc1.ast.stm.ElseIfPart;
-import com.olc1.ast.stm.ElsePart;
-import com.olc1.ast.stm.ExprStatment;
-import com.olc1.ast.stm.ForNode;
-import com.olc1.ast.stm.ForWhileNode;
-import com.olc1.ast.stm.IfNode;
-import com.olc1.ast.stm.Imprimir;
-import com.olc1.ast.stm.MinusAssign;
-import com.olc1.ast.stm.PlusAssign;
-import com.olc1.ast.stm.ShortDecl;
-import com.olc1.ast.stm.Statments;
-import com.olc1.ast.stm.VarDecl;
-import com.olc1.ast.stm.SwitchNode;
-import com.olc1.ast.stm.CaseNode;
-import com.olc1.ast.stm.FuncDeclNode;
-import com.olc1.ast.stm.MethodDeclNode;
-import com.olc1.ast.stm.ReturnNode;
-import com.olc1.ast.stm.StructDeclNode;
-import com.olc1.ast.exp.FuncCallNode;
-import com.olc1.ast.exp.MethodCallNode;
-import com.olc1.ast.exp.FieldAccessNode;
-import com.olc1.ast.exp.SliceAccessNode;
-import com.olc1.ast.exp.SliceLiteralNode;
-import com.olc1.ast.exp.BraceLiteralNode;
-import com.olc1.ast.exp.StructLiteralNode;
-import com.olc1.ast.exp.AppendNode;
-import com.olc1.ast.exp.SlicesIndexNode;
-import com.olc1.ast.exp.StringsJoinNode;
-import com.olc1.ast.exp.LenNode;
+import com.olc1.ast.exp.*;
+import com.olc1.ast.stm.*;
 
 public interface Visitor<T> {
     T visit(Integers.Context ctx);
+
     T visit(Decimal.Context ctx);
+
     T visit(Paren.Context ctx);
+
     T visit(Add.Context ctx);
+
     T visit(Sub.Context ctx);
+
     T visit(Mul.Context ctx);
+
     T visit(Div.Context ctx);
+
     T visit(Negate.Context ctx);
+
     T visit(BoolLiteral.Context ctx);
+
     T visit(StringLiteral.Context ctx);
+
     T visit(VarRef.Context ctx);
+
     T visit(Imprimir.Context ctx);
+
     T visit(Assign.Context ctx);
+
     T visit(IfNode.Context ctx);
+
     T visit(Statments.Context ctx);
+
     T visit(Mod.Context ctx);
+
     T visit(Equ.Context ctx);
+
     T visit(Nequ.Context ctx);
+
     T visit(Lesser.Context ctx);
+
     T visit(LesserEqu.Context ctx);
+
     T visit(Greater.Context ctx);
+
     T visit(GreaterEqu.Context ctx);
+
     T visit(And.Context ctx);
+
     T visit(Or.Context ctx);
+
     T visit(Not.Context ctx);
+
     T visit(NilLiteral.Context ctx);
+
     T visit(VarDecl.Context ctx);
+
     T visit(ShortDecl.Context ctx);
+
     T visit(PlusAssign.Context ctx);
+
     T visit(MinusAssign.Context ctx);
+
     T visit(ElseIfPart.Context ctx);
+
     T visit(ElsePart.Context ctx);
+
     T visit(ForNode.Context ctx);
+
+    T visit(ForRangeNode.Context ctx);
+
     T visit(ForWhileNode.Context ctx);
+
     T visit(BreakNode.Context ctx);
+
     T visit(ContinueNode.Context ctx);
+
     T visit(ExprStatment.Context ctx);
+
     T visit(FmtPrintln.Context ctx);
+
     T visit(StrconvAtoi.Context ctx);
+
     T visit(StrconvParseFloat.Context ctx);
+
     T visit(ReflectTypeOf.Context ctx);
+
     T visit(RuneLiteral.Context ctx);
+
     T visit(SwitchNode.Context ctx);
+
     T visit(CaseNode.Context ctx);
+
     T visit(FuncDeclNode.Context ctx);
+
     T visit(MethodDeclNode.Context ctx);
+
     T visit(ReturnNode.Context ctx);
+
     T visit(StructDeclNode.Context ctx);
+
     T visit(FuncCallNode.Context ctx);
+
     T visit(MethodCallNode.Context ctx);
+
     T visit(FieldAccessNode.Context ctx);
+
     T visit(SliceAccessNode.Context ctx);
+
     T visit(SliceLiteralNode.Context ctx);
+
     T visit(BraceLiteralNode.Context ctx);
+
     T visit(StructLiteralNode.Context ctx);
+
     T visit(AppendNode.Context ctx);
+
     T visit(SlicesIndexNode.Context ctx);
+
     T visit(StringsJoinNode.Context ctx);
+
     T visit(LenNode.Context ctx);
 }

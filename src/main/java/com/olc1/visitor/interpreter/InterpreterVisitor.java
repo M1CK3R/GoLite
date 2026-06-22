@@ -738,6 +738,83 @@ public class InterpreterVisitor implements Visitor<ValueWrapper> {
         return Visit(ctx.body);
     }
 
+    @Override
+    public ValueWrapper visit(ForRangeNode.Context ctx) {
+        ValueWrapper collVal = Visit(ctx.collection);
+        String elemType;
+        int size = 0;
+        List<ValueWrapper> elements = null;
+        String strVal = null;
+        
+        if (collVal instanceof SliceValue sv) {
+            elemType = sv.getElementType();
+            elements = sv.getElements();
+            size = elements.size();
+        } else if (collVal instanceof StringValue sv) {
+            elemType = "rune";
+            strVal = sv.value();
+            size = strVal.length();
+        } else {
+            throw new RuntimeException("Se requiere un slice o string para usar range");
+        }
+
+        Environment oldEnv = currentEnvironment;
+        currentEnvironment = new Environment(oldEnv);
+        try {
+            if (ctx.isShortDecl) {
+                if (ctx.indexId != null && !ctx.indexId.equals("_")) {
+                    currentEnvironment.define(ctx.indexId, new IntValue(0, ctx.line, ctx.column));
+                    addSymbol(ctx.indexId, "Variable", "int", currentScope, ctx.line, ctx.column);
+                }
+                if (ctx.valueId != null && !ctx.valueId.equals("_")) {
+                    ValueWrapper defVal = createDefaultValue(elemType, ctx.line, ctx.column);
+                    currentEnvironment.define(ctx.valueId, defVal);
+                    addSymbol(ctx.valueId, "Variable", elemType, currentScope, ctx.line, ctx.column);
+                }
+            }
+
+            for (int i = 0; i < size; i++) {
+                ValueWrapper idxVal = new IntValue(i, ctx.line, ctx.column);
+                ValueWrapper valVal;
+                if (elements != null) {
+                    valVal = elements.get(i);
+                } else {
+                    valVal = new RuneValue(strVal.charAt(i), ctx.line, ctx.column);
+                }
+
+                if (ctx.indexId != null && !ctx.indexId.equals("_")) {
+                    if (ctx.isShortDecl) {
+                        currentEnvironment.define(ctx.indexId, idxVal);
+                    } else {
+                        if (!currentEnvironment.assign(ctx.indexId, idxVal)) {
+                            throw new RuntimeException("Variable no definida: " + ctx.indexId);
+                        }
+                    }
+                }
+                if (ctx.valueId != null && !ctx.valueId.equals("_")) {
+                    if (ctx.isShortDecl) {
+                        currentEnvironment.define(ctx.valueId, valVal);
+                    } else {
+                        if (!currentEnvironment.assign(ctx.valueId, valVal)) {
+                            throw new RuntimeException("Variable no definida: " + ctx.valueId);
+                        }
+                    }
+                }
+
+                try {
+                    Visit(ctx.body);
+                } catch (BreakException e) {
+                    break;
+                } catch (ContinueException e) {
+                    // continuar
+                }
+            }
+        } finally {
+            currentEnvironment = oldEnv;
+        }
+        return defaultVoid;
+    }
+
     // Bucles
 
     @Override

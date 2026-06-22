@@ -559,6 +559,39 @@ public class AppTest
         assertTrue("Should find local variable p inside main", foundPLocalVarInMain);
         assertTrue("Should find local variable numeros slice inside main", foundNumerosSliceInMain);
     }
+
+    @Test
+    public void testForRangeLoops() throws Exception {
+        com.olc1.reports.ErrorCollector.clear();
+        String input =
+            "func main() {\n" +
+            "    numeros := []int{10, 20, 30, 40, 50}\n" +
+            "    for indice, valor := range numeros {\n" +
+            "        fmt.Println(\"índice:\", indice, \"valor:\", valor)\n" +
+            "    }\n" +
+            "}\n";
+
+        Lexer lexer = new Lexer(new BufferedReader(new StringReader(input)));
+        parser p = new parser(lexer);
+        ASTNode ast = (ASTNode) p.parse().value;
+
+        for (GoLiteError err : p.errors) {
+            System.out.println("PARSER ERROR in testForRangeLoops: " + err.getDescription());
+        }
+        assertTrue("Should have no parser errors", p.errors.isEmpty());
+
+        InterpreterVisitor interpreter = new InterpreterVisitor();
+        interpreter.Visit(ast);
+        String output = interpreter.output;
+
+        for (GoLiteError err : com.olc1.reports.ErrorCollector.getErrors()) {
+            System.out.println("SEMANTIC ERROR in testForRangeLoops: " + err.getDescription());
+        }
+        assertTrue("Should have no semantic errors", com.olc1.reports.ErrorCollector.getErrors().isEmpty());
+
+        String expected = "índice: 0 valor: 10\níndice: 1 valor: 20\níndice: 2 valor: 30\níndice: 3 valor: 40\níndice: 4 valor: 50\n";
+        assertEquals(expected, output.replace("\r\n", "\n"));
+    }
 }
 
 

@@ -11,6 +11,7 @@ import java.util.List;
 import java_cup.runtime.Symbol;
 
 import com.olc1.reports.GoLiteError;
+import com.olc1.reports.TokenEntry;
 
 
 @SuppressWarnings("fallthrough")
@@ -457,6 +458,14 @@ public class Lexer implements java_cup.runtime.Scanner {
     // }
 
     public final List<GoLiteError> errors = new ArrayList<>();
+    public final List<TokenEntry> tokens = new ArrayList<>();
+
+    private Symbol track(int type, int line, int col, String text) {
+        String typeName = (type >= 0 && type < sym.terminalNames.length)
+            ? sym.terminalNames[type] : "UNKNOWN";
+        tokens.add(new TokenEntry(typeName, text, line, col));
+        return new Symbol(type, line, col, text);
+    }
 
 
 
@@ -897,142 +906,142 @@ public class Lexer implements java_cup.runtime.Scanner {
           // fall through
           case 70: break;
           case 3:
-            { return new Symbol(sym.not, yyline, yycolumn, yytext());
+            { return track(sym.not, yyline, yycolumn, yytext());
             }
           // fall through
           case 71: break;
           case 4:
-            { return new Symbol(sym.mod, yyline, yycolumn, yytext());
+            { return track(sym.mod, yyline, yycolumn, yytext());
             }
           // fall through
           case 72: break;
           case 5:
-            { return new Symbol(sym.lparen, yyline, yycolumn, yytext());
+            { return track(sym.lparen, yyline, yycolumn, yytext());
             }
           // fall through
           case 73: break;
           case 6:
-            { return new Symbol(sym.rparen, yyline, yycolumn, yytext());
+            { return track(sym.rparen, yyline, yycolumn, yytext());
             }
           // fall through
           case 74: break;
           case 7:
-            { return new Symbol(sym.times, yyline, yycolumn, yytext());
+            { return track(sym.times, yyline, yycolumn, yytext());
             }
           // fall through
           case 75: break;
           case 8:
-            { return new Symbol(sym.plus, yyline, yycolumn, yytext());
+            { return track(sym.plus, yyline, yycolumn, yytext());
             }
           // fall through
           case 76: break;
           case 9:
-            { return new Symbol(sym.comma, yyline, yycolumn, yytext());
+            { return track(sym.comma, yyline, yycolumn, yytext());
             }
           // fall through
           case 77: break;
           case 10:
-            { return new Symbol(sym.minus, yyline, yycolumn, yytext());
+            { return track(sym.minus, yyline, yycolumn, yytext());
             }
           // fall through
           case 78: break;
           case 11:
-            { return new Symbol(sym.dot, yyline, yycolumn, yytext());
+            { return track(sym.dot, yyline, yycolumn, yytext());
             }
           // fall through
           case 79: break;
           case 12:
-            { return new Symbol(sym.slash, yyline, yycolumn, yytext());
+            { return track(sym.slash, yyline, yycolumn, yytext());
             }
           // fall through
           case 80: break;
           case 13:
-            { return new Symbol(sym.integer, yyline, yycolumn, yytext());
+            { return track(sym.integer, yyline, yycolumn, yytext());
             }
           // fall through
           case 81: break;
           case 14:
-            { return new Symbol(sym.colon, yyline, yycolumn, yytext());
+            { return track(sym.colon, yyline, yycolumn, yytext());
             }
           // fall through
           case 82: break;
           case 15:
-            { return new Symbol(sym.scol, yyline, yycolumn, yytext());
+            { return track(sym.scol, yyline, yycolumn, yytext());
             }
           // fall through
           case 83: break;
           case 16:
-            { return new Symbol(sym.lt, yyline, yycolumn, yytext());
+            { return track(sym.lt, yyline, yycolumn, yytext());
             }
           // fall through
           case 84: break;
           case 17:
-            { return new Symbol(sym.assign, yyline, yycolumn, yytext());
+            { return track(sym.assign, yyline, yycolumn, yytext());
             }
           // fall through
           case 85: break;
           case 18:
-            { return new Symbol(sym.gt, yyline, yycolumn, yytext());
+            { return track(sym.gt, yyline, yycolumn, yytext());
             }
           // fall through
           case 86: break;
           case 19:
-            { return new Symbol(sym.id, yyline, yycolumn, yytext());
+            { return track(sym.id, yyline, yycolumn, yytext());
             }
           // fall through
           case 87: break;
           case 20:
-            { return new Symbol(sym.lbracket, yyline, yycolumn, yytext());
+            { return track(sym.lbracket, yyline, yycolumn, yytext());
             }
           // fall through
           case 88: break;
           case 21:
-            { return new Symbol(sym.rbracket, yyline, yycolumn, yytext());
+            { return track(sym.rbracket, yyline, yycolumn, yytext());
             }
           // fall through
           case 89: break;
           case 22:
-            { return new Symbol(sym.lbrace, yyline, yycolumn, yytext());
+            { return track(sym.lbrace, yyline, yycolumn, yytext());
             }
           // fall through
           case 90: break;
           case 23:
-            { return new Symbol(sym.rbrace, yyline, yycolumn, yytext());
+            { return track(sym.rbrace, yyline, yycolumn, yytext());
             }
           // fall through
           case 91: break;
           case 24:
-            { return new Symbol(sym.neq, yyline, yycolumn, yytext());
+            { return track(sym.neq, yyline, yycolumn, yytext());
             }
           // fall through
           case 92: break;
           case 25:
-            { return new Symbol(sym.string, yyline, yycolumn, yytext().substring(1, yytext().length() - 1));
+            { String raw = yytext(); tokens.add(new TokenEntry("string", raw.substring(1, raw.length() - 1), yyline, yycolumn)); return new Symbol(sym.string, yyline, yycolumn, raw.substring(1, raw.length() - 1));
             }
           // fall through
           case 93: break;
           case 26:
-            { return new Symbol(sym.and, yyline, yycolumn, yytext());
+            { return track(sym.and, yyline, yycolumn, yytext());
             }
           // fall through
           case 94: break;
           case 27:
-            { return new Symbol(sym.plusplus, yyline, yycolumn, yytext());
+            { return track(sym.plusplus, yyline, yycolumn, yytext());
             }
           // fall through
           case 95: break;
           case 28:
-            { return new Symbol(sym.plus_assign, yyline, yycolumn, yytext());
+            { return track(sym.plus_assign, yyline, yycolumn, yytext());
             }
           // fall through
           case 96: break;
           case 29:
-            { return new Symbol(sym.minusminus, yyline, yycolumn, yytext());
+            { return track(sym.minusminus, yyline, yycolumn, yytext());
             }
           // fall through
           case 97: break;
           case 30:
-            { return new Symbol(sym.minus_assign, yyline, yycolumn, yytext());
+            { return track(sym.minus_assign, yyline, yycolumn, yytext());
             }
           // fall through
           case 98: break;
@@ -1042,67 +1051,67 @@ public class Lexer implements java_cup.runtime.Scanner {
           // fall through
           case 99: break;
           case 32:
-            { return new Symbol(sym.walrus_assign, yyline, yycolumn, yytext());
+            { return track(sym.walrus_assign, yyline, yycolumn, yytext());
             }
           // fall through
           case 100: break;
           case 33:
-            { return new Symbol(sym.leq, yyline, yycolumn, yytext());
+            { return track(sym.leq, yyline, yycolumn, yytext());
             }
           // fall through
           case 101: break;
           case 34:
-            { return new Symbol(sym.eq, yyline, yycolumn, yytext());
+            { return track(sym.eq, yyline, yycolumn, yytext());
             }
           // fall through
           case 102: break;
           case 35:
-            { return new Symbol(sym.geq, yyline, yycolumn, yytext());
+            { return track(sym.geq, yyline, yycolumn, yytext());
             }
           // fall through
           case 103: break;
           case 36:
-            { return new Symbol(sym.kwIf,      yyline, yycolumn, yytext());
+            { return track(sym.kwIf,      yyline, yycolumn, yytext());
             }
           // fall through
           case 104: break;
           case 37:
-            { return new Symbol(sym.or, yyline, yycolumn, yytext());
+            { return track(sym.or, yyline, yycolumn, yytext());
             }
           // fall through
           case 105: break;
           case 38:
-            { return new Symbol(sym.rune, yyline, yycolumn, yytext());
+            { return track(sym.rune, yyline, yycolumn, yytext());
             }
           // fall through
           case 106: break;
           case 39:
-            { return new Symbol(sym.decimal, yyline, yycolumn, yytext());
+            { return track(sym.decimal, yyline, yycolumn, yytext());
             }
           // fall through
           case 107: break;
           case 40:
-            { return new Symbol(sym.kwFor,      yyline, yycolumn, yytext());
+            { return track(sym.kwFor,      yyline, yycolumn, yytext());
             }
           // fall through
           case 108: break;
           case 41:
-            { return new Symbol(sym.kwInt,     yyline, yycolumn, yytext());
+            { return track(sym.kwInt,     yyline, yycolumn, yytext());
             }
           // fall through
           case 109: break;
           case 42:
-            { return new Symbol(sym.kwLen, yyline, yycolumn, yytext());
+            { return track(sym.kwLen, yyline, yycolumn, yytext());
             }
           // fall through
           case 110: break;
           case 43:
-            { return new Symbol(sym.kwNil,     yyline, yycolumn, yytext());
+            { return track(sym.kwNil,     yyline, yycolumn, yytext());
             }
           // fall through
           case 111: break;
           case 44:
-            { return new Symbol(sym.kwVar,     yyline, yycolumn, yytext());
+            { return track(sym.kwVar,     yyline, yycolumn, yytext());
             }
           // fall through
           case 112: break;
@@ -1112,117 +1121,117 @@ public class Lexer implements java_cup.runtime.Scanner {
           // fall through
           case 113: break;
           case 46:
-            { return new Symbol(sym.kwBool,    yyline, yycolumn, yytext());
+            { return track(sym.kwBool,    yyline, yycolumn, yytext());
             }
           // fall through
           case 114: break;
           case 47:
-            { return new Symbol(sym.kwCase,     yyline, yycolumn, yytext());
+            { return track(sym.kwCase,     yyline, yycolumn, yytext());
             }
           // fall through
           case 115: break;
           case 48:
-            { return new Symbol(sym.kwElse,    yyline, yycolumn, yytext());
+            { return track(sym.kwElse,    yyline, yycolumn, yytext());
             }
           // fall through
           case 116: break;
           case 49:
-            { return new Symbol(sym.kwFunc,    yyline, yycolumn, yytext());
+            { return track(sym.kwFunc,    yyline, yycolumn, yytext());
             }
           // fall through
           case 117: break;
           case 50:
-            { return new Symbol(sym.kwRune,    yyline, yycolumn, yytext());
+            { return track(sym.kwRune,    yyline, yycolumn, yytext());
             }
           // fall through
           case 118: break;
           case 51:
-            { return new Symbol(sym.kwTrue,    yyline, yycolumn, yytext());
+            { return track(sym.kwTrue,    yyline, yycolumn, yytext());
             }
           // fall through
           case 119: break;
           case 52:
-            { return new Symbol(sym.kwType,     yyline, yycolumn, yytext());
+            { return track(sym.kwType,     yyline, yycolumn, yytext());
             }
           // fall through
           case 120: break;
           case 53:
-            { return new Symbol(sym.kwBreak,    yyline, yycolumn, yytext());
+            { return track(sym.kwBreak,    yyline, yycolumn, yytext());
             }
           // fall through
           case 121: break;
           case 54:
-            { return new Symbol(sym.kwFalse,   yyline, yycolumn, yytext());
+            { return track(sym.kwFalse,   yyline, yycolumn, yytext());
             }
           // fall through
           case 122: break;
           case 55:
-            { return new Symbol(sym.kwAppend,   yyline, yycolumn, yytext());
+            { return track(sym.kwAppend,   yyline, yycolumn, yytext());
             }
           // fall through
           case 123: break;
           case 56:
-            { return new Symbol(sym.kwReturn,   yyline, yycolumn, yytext());
+            { return track(sym.kwReturn,   yyline, yycolumn, yytext());
             }
           // fall through
           case 124: break;
           case 57:
-            { return new Symbol(sym.kwString,  yyline, yycolumn, yytext());
+            { return track(sym.kwString,  yyline, yycolumn, yytext());
             }
           // fall through
           case 125: break;
           case 58:
-            { return new Symbol(sym.kwStruct,   yyline, yycolumn, yytext());
+            { return track(sym.kwStruct,   yyline, yycolumn, yytext());
             }
           // fall through
           case 126: break;
           case 59:
-            { return new Symbol(sym.kwSwitch,   yyline, yycolumn, yytext());
+            { return track(sym.kwSwitch,   yyline, yycolumn, yytext());
             }
           // fall through
           case 127: break;
           case 60:
-            { return new Symbol(sym.kwDefault,  yyline, yycolumn, yytext());
+            { return track(sym.kwDefault,  yyline, yycolumn, yytext());
             }
           // fall through
           case 128: break;
           case 61:
-            { return new Symbol(sym.kwFloat,   yyline, yycolumn, yytext());
+            { return track(sym.kwFloat,   yyline, yycolumn, yytext());
             }
           // fall through
           case 129: break;
           case 62:
-            { return new Symbol(sym.kwContinue, yyline, yycolumn, yytext());
+            { return track(sym.kwContinue, yyline, yycolumn, yytext());
             }
           // fall through
           case 130: break;
           case 63:
-            { return new Symbol(sym.fmt_println, yyline, yycolumn, yytext());
+            { return track(sym.fmt_println, yyline, yycolumn, yytext());
             }
           // fall through
           case 131: break;
           case 64:
-            { return new Symbol(sym.kwSlicesIndex, yyline, yycolumn, yytext());
+            { return track(sym.kwSlicesIndex, yyline, yycolumn, yytext());
             }
           // fall through
           case 132: break;
           case 65:
-            { return new Symbol(sym.strconv_atoi, yyline, yycolumn, yytext());
+            { return track(sym.strconv_atoi, yyline, yycolumn, yytext());
             }
           // fall through
           case 133: break;
           case 66:
-            { return new Symbol(sym.kwStringsJoin, yyline, yycolumn, yytext());
+            { return track(sym.kwStringsJoin, yyline, yycolumn, yytext());
             }
           // fall through
           case 134: break;
           case 67:
-            { return new Symbol(sym.reflect_typeof, yyline, yycolumn, yytext());
+            { return track(sym.reflect_typeof, yyline, yycolumn, yytext());
             }
           // fall through
           case 135: break;
           case 68:
-            { return new Symbol(sym.strconv_parsefloat, yyline, yycolumn, yytext());
+            { return track(sym.strconv_parsefloat, yyline, yycolumn, yytext());
             }
           // fall through
           case 136: break;

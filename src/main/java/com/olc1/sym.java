@@ -8,73 +8,74 @@ package com.olc1;
 /** CUP generated interface containing symbol constants. */
 public interface sym {
   /* terminals */
-  public static final int slash = 41;
-  public static final int plusplus = 43;
+  public static final int slash = 42;
+  public static final int plusplus = 44;
   public static final int kwFor = 4;
-  public static final int lbracket = 58;
-  public static final int kwReturn = 53;
-  public static final int plus = 38;
-  public static final int mod = 42;
-  public static final int kwDefault = 14;
-  public static final int lbrace = 48;
-  public static final int neq = 30;
-  public static final int UMINUS = 16;
-  public static final int kwFloat = 18;
+  public static final int lbracket = 59;
+  public static final int kwReturn = 54;
+  public static final int plus = 39;
+  public static final int mod = 43;
+  public static final int kwDefault = 15;
+  public static final int lbrace = 49;
+  public static final int neq = 31;
+  public static final int UMINUS = 17;
+  public static final int kwFloat = 19;
   public static final int kwNil = 9;
-  public static final int minus = 39;
-  public static final int gt = 34;
-  public static final int rbrace = 49;
-  public static final int kwSwitch = 12;
-  public static final int kwFalse = 11;
-  public static final int kwSlicesIndex = 55;
+  public static final int minus = 40;
+  public static final int gt = 35;
+  public static final int rbrace = 50;
+  public static final int kwSwitch = 13;
+  public static final int kwFalse = 12;
+  public static final int kwSlicesIndex = 56;
   public static final int kwIf = 2;
-  public static final int string = 65;
-  public static final int comma = 51;
-  public static final int reflect_typeof = 25;
-  public static final int plus_assign = 27;
-  public static final int rune = 66;
-  public static final int kwStringsJoin = 56;
-  public static final int kwCase = 13;
-  public static final int leq = 31;
-  public static final int scol = 50;
-  public static final int minus_assign = 28;
-  public static final int strconv_atoi = 23;
-  public static final int kwString = 20;
-  public static final int walrus_assign = 26;
-  public static final int kwStruct = 52;
+  public static final int string = 66;
+  public static final int comma = 52;
+  public static final int reflect_typeof = 26;
+  public static final int plus_assign = 28;
+  public static final int rune = 67;
+  public static final int kwStringsJoin = 57;
+  public static final int kwCase = 14;
+  public static final int leq = 32;
+  public static final int scol = 51;
+  public static final int minus_assign = 29;
+  public static final int strconv_atoi = 24;
+  public static final int kwString = 21;
+  public static final int walrus_assign = 27;
+  public static final int kwStruct = 53;
   public static final int EOF = 0;
-  public static final int kwType = 61;
-  public static final int rbracket = 59;
+  public static final int kwType = 62;
+  public static final int rbracket = 60;
   public static final int error = 1;
-  public static final int lt = 33;
-  public static final int kwBool = 19;
-  public static final int times = 40;
-  public static final int or = 36;
+  public static final int lt = 34;
+  public static final int kwBool = 20;
+  public static final int times = 41;
+  public static final int or = 37;
   public static final int kwContinue = 6;
-  public static final int lparen = 46;
-  public static final int colon = 15;
-  public static final int integer = 63;
-  public static final int kwLen = 57;
-  public static final int strconv_parsefloat = 24;
-  public static final int id = 62;
-  public static final int rparen = 47;
-  public static final int kwTrue = 10;
-  public static final int fmt_println = 22;
-  public static final int minusminus = 44;
+  public static final int lparen = 47;
+  public static final int colon = 16;
+  public static final int kwRange = 10;
+  public static final int integer = 64;
+  public static final int kwLen = 58;
+  public static final int strconv_parsefloat = 25;
+  public static final int id = 63;
+  public static final int rparen = 48;
+  public static final int kwTrue = 11;
+  public static final int fmt_println = 23;
+  public static final int minusminus = 45;
   public static final int kwVar = 7;
-  public static final int kwRune = 21;
-  public static final int not = 37;
-  public static final int and = 35;
-  public static final int eq = 29;
-  public static final int assign = 45;
-  public static final int kwAppend = 54;
+  public static final int kwRune = 22;
+  public static final int not = 38;
+  public static final int and = 36;
+  public static final int eq = 30;
+  public static final int assign = 46;
+  public static final int kwAppend = 55;
   public static final int kwElse = 3;
   public static final int kwFunc = 8;
-  public static final int geq = 32;
+  public static final int geq = 33;
   public static final int kwBreak = 5;
-  public static final int decimal = 64;
-  public static final int dot = 60;
-  public static final int kwInt = 17;
+  public static final int decimal = 65;
+  public static final int dot = 61;
+  public static final int kwInt = 18;
   public static final String[] terminalNames = new String[] {
   "EOF",
   "error",
@@ -86,6 +87,7 @@ public interface sym {
   "kwVar",
   "kwFunc",
   "kwNil",
+  "kwRange",
   "kwTrue",
   "kwFalse",
   "kwSwitch",

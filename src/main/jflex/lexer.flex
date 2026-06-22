@@ -118,6 +118,7 @@ newline = \n
 "func"      { return track(sym.kwFunc,    yyline, yycolumn, yytext()); }
 "nil"       { return track(sym.kwNil,     yyline, yycolumn, yytext()); }
 "for"       { return track(sym.kwFor,      yyline, yycolumn, yytext()); }
+"range"     { return track(sym.kwRange,    yyline, yycolumn, yytext()); }
 "break"     { return track(sym.kwBreak,    yyline, yycolumn, yytext()); }
 "continue"  { return track(sym.kwContinue, yyline, yycolumn, yytext()); }
 "switch"    { return track(sym.kwSwitch,   yyline, yycolumn, yytext()); }

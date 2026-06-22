@@ -26,7 +26,7 @@ parser code {:
     }
 :}
 
-terminal kwIf, kwElse, kwFor, kwBreak, kwContinue, kwVar, kwFunc, kwNil;
+terminal kwIf, kwElse, kwFor, kwBreak, kwContinue, kwVar, kwFunc, kwNil, kwRange;
 terminal kwTrue, kwFalse;
 terminal kwSwitch, kwCase, kwDefault, colon;
 terminal UMINUS;
@@ -133,6 +133,16 @@ INSTRUCCION ::=
     {: RESULT = new ForWhileNode(cond, b, kForleft, kForright); :}
     | kwFor:kFor lbrace INSTRUCCIONES:b rbrace
     {: RESULT = new ForWhileNode(new BoolLiteral(true, kForleft, kForright), b, kForleft, kForright); :}
+    | kwFor:kFor id:id1 comma id:id2 walrus_assign kwRange EXPRESION:c lbrace INSTRUCCIONES:b rbrace
+    {: RESULT = new ForRangeNode(id1, id2, true, c, b, kForleft, kForright); :}
+    | kwFor:kFor id:id1 comma id:id2 assign kwRange EXPRESION:c lbrace INSTRUCCIONES:b rbrace
+    {: RESULT = new ForRangeNode(id1, id2, false, c, b, kForleft, kForright); :}
+    | kwFor:kFor id:id1 walrus_assign kwRange EXPRESION:c lbrace INSTRUCCIONES:b rbrace
+    {: RESULT = new ForRangeNode(id1, null, true, c, b, kForleft, kForright); :}
+    | kwFor:kFor id:id1 assign kwRange EXPRESION:c lbrace INSTRUCCIONES:b rbrace
+    {: RESULT = new ForRangeNode(id1, null, false, c, b, kForleft, kForright); :}
+    | kwFor:kFor kwRange EXPRESION:c lbrace INSTRUCCIONES:b rbrace
+    {: RESULT = new ForRangeNode(null, null, false, c, b, kForleft, kForright); :}
     | kwBreak:kBreak OP_SCOL
     {: RESULT = new BreakNode(kBreakleft, kBreakright); :}
     | kwContinue:kContinue OP_SCOL
