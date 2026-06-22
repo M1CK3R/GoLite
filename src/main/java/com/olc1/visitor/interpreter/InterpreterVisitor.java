@@ -58,6 +58,20 @@ public class InterpreterVisitor implements Visitor<ValueWrapper> {
     private final Map<String, FuncDeclNode.Context> funcsMap = new HashMap<>();
     private final Map<String, MethodDeclNode.Context> methodsMap = new HashMap<>();
     private String expectedType = null;
+    private String currentScope = "Global";
+
+    private void addSymbol(String id, String tipoSimbolo, String tipoDato, String ambito, int line, int column) {
+        String normalizedTipoDato = tipoDato;
+        if (tipoDato != null && tipoDato.startsWith("[]")) {
+            normalizedTipoDato = "Slice";
+        }
+        for (SymbolEntry entry : symbolTable) {
+            if (entry.getId().equals(id) && entry.getAmbito().equals(ambito) && entry.getLine() == line && entry.getColumn() == column) {
+                return;
+            }
+        }
+        symbolTable.add(new SymbolEntry(id, tipoSimbolo, normalizedTipoDato, ambito, line, column));
+    }
 
     private static class ReturnException extends RuntimeException {
         public final ValueWrapper value;
@@ -230,10 +244,13 @@ public class InterpreterVisitor implements Visitor<ValueWrapper> {
 
     private ValueWrapper executeFunction(FuncDeclNode.Context func, List<ValueWrapper> args) {
         Environment funcEnv = new Environment(globalEnvironment);
+        String oldScope = currentScope;
+        currentScope = func.name;
         for (int i = 0; i < func.params.size(); i++) {
             Param param = func.params.get(i);
             ValueWrapper arg = args.get(i);
             funcEnv.define(param.name(), arg);
+            addSymbol(param.name(), "Variable", param.type(), currentScope, func.line, func.column);
         }
         Environment oldEnv = currentEnvironment;
         currentEnvironment = funcEnv;
@@ -243,6 +260,7 @@ public class InterpreterVisitor implements Visitor<ValueWrapper> {
             return e.value;
         } finally {
             currentEnvironment = oldEnv;
+            currentScope = oldScope;
         }
         return defaultVoid;
     }
@@ -250,11 +268,15 @@ public class InterpreterVisitor implements Visitor<ValueWrapper> {
     private ValueWrapper executeMethod(MethodDeclNode.Context method, ValueWrapper receiverVal,
             List<ValueWrapper> args) {
         Environment methodEnv = new Environment(globalEnvironment);
+        String oldScope = currentScope;
+        currentScope = method.name;
         methodEnv.define(method.receiver.name(), receiverVal);
+        addSymbol(method.receiver.name(), "Variable", method.receiver.type(), currentScope, method.line, method.column);
         for (int i = 0; i < method.params.size(); i++) {
             Param param = method.params.get(i);
             ValueWrapper arg = args.get(i);
             methodEnv.define(param.name(), arg);
+            addSymbol(param.name(), "Variable", param.type(), currentScope, method.line, method.column);
         }
         Environment oldEnv = currentEnvironment;
         currentEnvironment = methodEnv;
@@ -264,6 +286,7 @@ public class InterpreterVisitor implements Visitor<ValueWrapper> {
             return e.value;
         } finally {
             currentEnvironment = oldEnv;
+            currentScope = oldScope;
         }
         return defaultVoid;
     }
@@ -598,7 +621,7 @@ public class InterpreterVisitor implements Visitor<ValueWrapper> {
             val = createDefaultValue(ctx.type, ctx.line, ctx.column);
         }
         currentEnvironment.define(ctx.name, val);
-        symbolTable.add(new SymbolEntry(symbolTable.size() + 1, ctx.name, ctx.type, ctx.line, ctx.column));
+        addSymbol(ctx.name, "Variable", ctx.type, currentScope, ctx.line, ctx.column);
         return defaultVoid;
     }
 
@@ -613,7 +636,7 @@ public class InterpreterVisitor implements Visitor<ValueWrapper> {
             this.expectedType = prev;
         }
         currentEnvironment.define(ctx.name, val);
-        symbolTable.add(new SymbolEntry(symbolTable.size() + 1, ctx.name, val.getTypeName(), ctx.line, ctx.column));
+        addSymbol(ctx.name, "Variable", val.getTypeName(), currentScope, ctx.line, ctx.column);
         return defaultVoid;
     }
 
@@ -871,12 +894,14 @@ public class InterpreterVisitor implements Visitor<ValueWrapper> {
     @Override
     public ValueWrapper visit(FuncDeclNode.Context ctx) {
         funcsMap.put(ctx.name, ctx);
+        addSymbol(ctx.name, ctx.returnType == null ? "Procedimiento" : "Función", ctx.returnType == null ? "void" : ctx.returnType, "Global", ctx.line, ctx.column);
         return defaultVoid;
     }
 
     @Override
     public ValueWrapper visit(MethodDeclNode.Context ctx) {
         methodsMap.put(ctx.receiver.type() + "#" + ctx.name, ctx);
+        addSymbol(ctx.name, ctx.returnType == null ? "Procedimiento" : "Función", ctx.returnType == null ? "void" : ctx.returnType, "Global", ctx.line, ctx.column);
         return defaultVoid;
     }
 
@@ -889,6 +914,7 @@ public class InterpreterVisitor implements Visitor<ValueWrapper> {
     @Override
     public ValueWrapper visit(StructDeclNode.Context ctx) {
         structsMap.put(ctx.name, ctx);
+        addSymbol(ctx.name, "Struct", ctx.name, "Global", ctx.line, ctx.column);
         return defaultVoid;
     }
 

@@ -8,6 +8,7 @@ import org.junit.Test;
 import java.io.StringReader;
 import java.io.BufferedReader;
 import com.olc1.reports.GoLiteError;
+import com.olc1.reports.SymbolEntry;
 import com.olc1.ast.ASTNode;
 import com.olc1.visitor.interpreter.InterpreterVisitor;
 
@@ -525,6 +526,38 @@ public class AppTest
         }
         assertTrue("Should have no semantic errors", com.olc1.reports.ErrorCollector.getErrors().isEmpty());
         assertEquals("42\nHola, GoLite!\n15\nProducto B\n[1, 2, 3, 4]\n", output.replace("\r\n", "\n"));
+
+        // Verify some symbol table entries
+        boolean foundProductoStruct = false;
+        boolean foundObtenerNumeroFunc = false;
+        boolean foundImprimirMensajeProc = false;
+        boolean foundPLocalVarInMain = false;
+        boolean foundNumerosSliceInMain = false;
+
+        for (SymbolEntry entry : interpreter.symbolTable) {
+            System.out.println("SYMBOL: " + entry.toTableRow());
+            if (entry.getId().equals("Producto") && entry.getTipoSimbolo().equals("Struct") && entry.getAmbito().equals("Global")) {
+                foundProductoStruct = true;
+            }
+            if (entry.getId().equals("obtenerNumero") && entry.getTipoSimbolo().equals("Función") && entry.getTipoDato().equals("int") && entry.getAmbito().equals("Global")) {
+                foundObtenerNumeroFunc = true;
+            }
+            if (entry.getId().equals("imprimirMensaje") && entry.getTipoSimbolo().equals("Procedimiento") && entry.getTipoDato().equals("void") && entry.getAmbito().equals("Global")) {
+                foundImprimirMensajeProc = true;
+            }
+            if (entry.getId().equals("p") && entry.getTipoSimbolo().equals("Variable") && entry.getTipoDato().equals("Producto") && entry.getAmbito().equals("main")) {
+                foundPLocalVarInMain = true;
+            }
+            if (entry.getId().equals("numeros") && entry.getTipoSimbolo().equals("Variable") && entry.getTipoDato().equals("Slice") && entry.getAmbito().equals("main")) {
+                foundNumerosSliceInMain = true;
+            }
+        }
+
+        assertTrue("Should find Producto struct in symbol table", foundProductoStruct);
+        assertTrue("Should find obtenerNumero function in symbol table", foundObtenerNumeroFunc);
+        assertTrue("Should find imprimirMensaje procedure in symbol table", foundImprimirMensajeProc);
+        assertTrue("Should find local variable p inside main", foundPLocalVarInMain);
+        assertTrue("Should find local variable numeros slice inside main", foundNumerosSliceInMain);
     }
 }
 

@@ -1,23 +1,26 @@
 package com.olc1.reports;
 
 public class SymbolEntry {
-    private final int number;
-    private final String lexema;
-    private final String tipo;
+    private final String id;
+    private final String tipoSimbolo;
+    private final String tipoDato;
+    private final String ambito;
     private final int line;
     private final int column;
 
-    public SymbolEntry(int number, String lexema, String tipo, int line, int column) {
-        this.number = number;
-        this.lexema = lexema;
-        this.tipo = tipo;
+    public SymbolEntry(String id, String tipoSimbolo, String tipoDato, String ambito, int line, int column) {
+        this.id = id;
+        this.tipoSimbolo = tipoSimbolo;
+        this.tipoDato = tipoDato;
+        this.ambito = ambito;
         this.line = line;
         this.column = column;
     }
 
-    public int getNumber() { return number; }
-    public String getLexema() { return lexema; }
-    public String getTipo() { return tipo; }
+    public String getId() { return id; }
+    public String getTipoSimbolo() { return tipoSimbolo; }
+    public String getTipoDato() { return tipoDato; }
+    public String getAmbito() { return ambito; }
     public int getLine() { return line; }
     public int getColumn() { return column; }
 
@@ -25,22 +28,22 @@ public class SymbolEntry {
      * Returns a formatted row for the symbol table report.
      */
     public String toTableRow() {
-        return String.format("%-5d| %-20s| %-12s| %-7d| %d",
-                number, lexema, tipo, line, column);
+        return String.format("%-15s %-15s %-15s %-15s %-6d %d",
+                id, tipoSimbolo, tipoDato, ambito, line, column);
     }
 
     /**
      * Returns the header for the symbol table.
      */
     public static String tableHeader() {
-        return String.format("%-5s| %-20s| %-12s| %-7s| %s",
-                "No.", "Lexema", "Tipo", "Línea", "Columna");
+        return String.format("%-15s %-15s %-15s %-15s %-6s %s",
+                "ID", "Tipo símbolo", "Tipo dato", "Ámbito", "Línea", "Columna");
     }
 
     /**
      * Returns a separator line for the table.
      */
     public static String tableSeparator() {
-        return "-----+---------------------+-------------+--------+--------";
+        return "---------------------------------------------------------------------------------";
     }
 }

@@ -24,6 +24,7 @@ import com.olc1.reports.ErrorCollector;
 import com.olc1.reports.ErrorReportGenerator;
 import com.olc1.reports.GoLiteError;
 import com.olc1.reports.SymbolEntry;
+import com.olc1.reports.TokenEntry;
 import com.olc1.visitor.interpreter.InterpreterVisitor;
 
 public class GoliteFrame extends JFrame {
@@ -62,6 +63,9 @@ public class GoliteFrame extends JFrame {
         menuBar.onSave(e -> saveFile());
         menuBar.onExit(e -> System.exit(0));
         menuBar.onTokens(e -> {
+            tokens();
+        });
+        menuBar.onSymbolTable(e -> {
             symbolTable();
         });
         menuBar.onErrors(e -> {
@@ -215,6 +219,29 @@ public class GoliteFrame extends JFrame {
         }
 
         consoleTextArea.append("\nTotal de símbolos: " + interpreter.symbolTable.size() + "\n");
+    }
+
+    private void tokens() {
+        cleanConsole();
+
+        if (lexer == null) {
+            consoleTextArea.append("Ejecuta el código primero antes de ver el reporte de tokens.\n");
+            return;
+        }
+
+        consoleTextArea.append("=== Reporte de Tokens ===\n\n");
+        consoleTextArea.append(TokenEntry.tableHeader() + "\n");
+        consoleTextArea.append(TokenEntry.tableSeparator() + "\n");
+
+        if (lexer.tokens.isEmpty()) {
+            consoleTextArea.append("(No se encontraron tokens)\n");
+        } else {
+            for (TokenEntry entry : lexer.tokens) {
+                consoleTextArea.append(entry.toTableRow() + "\n");
+            }
+        }
+
+        consoleTextArea.append("\nTotal de tokens: " + lexer.tokens.size() + "\n");
     }
 
     private void cleanConsole() {
