@@ -20,11 +20,7 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 import com.olc1.Lexer;
 import com.olc1.ast.ASTNode;
 import com.olc1.parser;
-import com.olc1.reports.ErrorCollector;
-import com.olc1.reports.ErrorReportGenerator;
-import com.olc1.reports.GoLiteError;
-import com.olc1.reports.SymbolEntry;
-import com.olc1.reports.TokenEntry;
+import com.olc1.reports.*;
 import com.olc1.visitor.interpreter.InterpreterVisitor;
 
 public class GoliteFrame extends JFrame {
@@ -33,6 +29,7 @@ public class GoliteFrame extends JFrame {
     private Lexer lexer;
     private parser parser;
     private InterpreterVisitor interpreter;
+    private ASTNode currentAst;
 
     public GoliteFrame() {
         setTitle("Golite");
@@ -65,6 +62,7 @@ public class GoliteFrame extends JFrame {
         menuBar.onTokens(e -> {
             tokens();
         });
+        menuBar.onAst(e -> generarReporteAST());
         menuBar.onSymbolTable(e -> {
             symbolTable();
         });
@@ -130,9 +128,43 @@ public class GoliteFrame extends JFrame {
         }
     }
 
+    private void generarReporteAST() {
+        // Asegurarnos de que tengamos un AST disponible
+        if (currentAst == null) {
+            consoleTextArea.append("No hay un AST disponible. Ejecuta el código primero.\n");
+            return;
+        }
+
+        // Opcional: si hay errores, advertir pero igual generar (puede estar parcial)
+        if (!ErrorCollector.getErrors().isEmpty()) {
+            consoleTextArea.append("Advertencia: existen errores semánticos, el AST puede estar incompleto.\n");
+        }
+
+        try {
+            // Generar el reporte usando el AST guardado
+            String filePath = AstReportGenerator.generate(currentAst, null);
+
+            consoleTextArea.append("Reporte AST generado exitosamente: " + filePath + "\n");
+
+            try {
+                AstReportGenerator.openReport(filePath);
+            } catch (IOException e) {
+                consoleTextArea.append("No se pudo abrir el archivo automáticamente: " + e.getMessage() + "\n");
+            }
+
+        } catch (AstReportException e) {
+            consoleTextArea.append("Error al generar el AST: " + e.getMessage() + "\n");
+        } catch (Exception e) {
+            consoleTextArea.append("Error inesperado: " + e.getMessage() + "\n");
+            e.printStackTrace();
+        }
+    }
+
     private void run() {
         cleanConsole(); // limpiamos antes de empezar
         ErrorCollector.clear(); // limpiar errores semánticos previos
+
+        currentAst = parsearCodigo(editorPanel.getText());
 
         ASTNode ast = null;
         try {
@@ -145,13 +177,12 @@ public class GoliteFrame extends JFrame {
         }
 
         // Si se logró construir un AST (parcial o completo), intentar interpretar
-        if (ast != null) {
+        if (currentAst != null) {
             try {
                 interpreter = new InterpreterVisitor();
-                interpreter.Visit(ast);
+                interpreter.Visit(currentAst);
                 consoleTextArea.append(interpreter.output);
             } catch (Exception e) {
-                // Capturar errores semánticos/runtime y agregarlos al reporte silenciosamente
                 ErrorCollector.addError("semántico", e.getMessage(), 0, 0);
                 if (interpreter != null && !interpreter.output.isEmpty()) {
                     consoleTextArea.append(interpreter.output);
@@ -195,6 +226,16 @@ public class GoliteFrame extends JFrame {
         } catch (IOException ex) {
             cleanConsole();
             consoleTextArea.append("Error al generar el reporte HTML: " + ex.getMessage() + "\n");
+        }
+    }
+
+    private ASTNode parsearCodigo(String codigo) {
+        try {
+            lexer = new Lexer(new BufferedReader(new StringReader(codigo)));
+            parser = new parser(lexer);
+            return (ASTNode) parser.parse().value;
+        } catch (Exception e) {
+            return null;
         }
     }
 

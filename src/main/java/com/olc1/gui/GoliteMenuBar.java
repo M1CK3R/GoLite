@@ -1,10 +1,6 @@
 package com.olc1.gui;
 
-import java.awt.Color;
 import java.awt.event.ActionListener;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
-
 import javax.swing.JButton;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
@@ -20,6 +16,7 @@ public class GoliteMenuBar extends JMenuBar {
     private final JMenuItem tokensItem;
     private final JMenuItem symbolTableItem;
     private final JMenuItem errorsItem;
+    private final JMenuItem astItem;
     private final JMenuItem aboutItem;
 
     public GoliteMenuBar() {
@@ -42,9 +39,11 @@ public class GoliteMenuBar extends JMenuBar {
         tokensItem = new JMenuItem("Reporte de tokens");
         symbolTableItem = new JMenuItem("Reporte de tabla de símbolos");
         errorsItem = new JMenuItem("Reporte de errores");
+        astItem = new JMenuItem("Reporte AST");
         reportMenu.add(tokensItem);
         reportMenu.add(symbolTableItem);
         reportMenu.add(errorsItem);
+        reportMenu.add(astItem);
 
         aboutItem = new JMenuItem("Acerca de");
         helpMenu.add(aboutItem);
@@ -96,9 +95,13 @@ public class GoliteMenuBar extends JMenuBar {
         aboutItem.addActionListener(l);
     }
 
+    public void onAst(ActionListener l) {
+        astItem.addActionListener(l);
+    }
+
     private static JButton createButton(String text) {
-        JButton button = new JButton(text);
-        button.putClientProperty("JButton.buttonType", "toolBarButton");
-        return button;
+        JButton btn = new JButton(text);
+        btn.putClientProperty("JButton.buttonType", "toolBarButton");
+        return btn;
     }
 }
