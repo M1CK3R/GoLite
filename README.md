@@ -34,7 +34,7 @@ Este proyecto es un compilador/intérprete para el lenguaje **GoLite**, un lengu
 
    O si la aplicación se empaqueta como JAR:
    ```bash
-   mvn package
+   mvn package -DskipTests
    java -jar target/golite.jar
    ```
 
