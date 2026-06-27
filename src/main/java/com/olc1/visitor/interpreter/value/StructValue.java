@@ -40,11 +40,18 @@ public final class StructValue implements ValueWrapper {
         sb.append("{");
         int i = 0;
         for (Map.Entry<String, ValueWrapper> entry : fields.entrySet()) {
-            if (i > 0) sb.append(", ");
+            if (i > 0)
+                sb.append(", ");
             sb.append(entry.getKey()).append(":").append(entry.getValue());
             i++;
         }
         sb.append("}");
         return sb.toString();
+    }
+
+    public StructValue cloneValue() {
+        StructValue clone = new StructValue(this.typeName, this.line, this.column);
+        clone.fields().putAll(this.fields());
+        return clone;
     }
 }
