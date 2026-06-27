@@ -11,20 +11,34 @@ import com.olc1.ast.stm.*;
 import com.olc1.reports.GoLiteError;
 
 parser code {:
-    public List<GoLiteError> errors = new ArrayList<>();
+    // Lista pública con el tipo GoLiteError que espera tu interfaz gráfica
+    public java.util.ArrayList<com.olc1.reports.GoLiteError> errors = new java.util.ArrayList<>();
 
+    public ASTNode partialAst = null; // ← agregá esto
+
+    public java.util.ArrayList<com.olc1.reports.GoLiteError> getErroresSintacticos() {
+        return this.errors;
+    }
+    
+    @Override
     public void syntax_error(Symbol s) {
-        String tok = s.value != null ? s.value.toString() : "";
-        errors.add(new GoLiteError("sintáctico",
-            "Token inesperado '" + tok + "'", s.left, s.right));
+        String lexema = (s.value != null) ? s.value.toString() : "Desconocido";
+        int linea = s.left;
+        int columna = s.right;
+        String desc = "Token inesperado '" + lexema + "'";
+        errors.add(new com.olc1.reports.GoLiteError("Sintáctico", desc, linea, columna));
+        System.err.println("Error sintáctico recuperado: " + desc + " en la línea " + linea + ", columna " + columna); 
     }
 
-    public void unrecovered_syntax_error(Symbol s) throws Exception {
-        String tok = s.value != null ? s.value.toString() : "";
-        errors.add(new GoLiteError("sintáctico",
-            "Error sintáctico no recuperable cerca de '" + tok + "'", s.left, s.right));
+    @Override
+    public void unrecovered_syntax_error(Symbol s) throws java.lang.Exception {
+        String lexema = (s.value != null) ? s.value.toString() : "Desconocido";
+        errors.add(new com.olc1.reports.GoLiteError("Sintáctico",
+            "No se pudo seguir parseando cerca de '" + lexema + "'", s.left, s.right));
+        System.err.println("Error sintáctico IRRECUPERABLE...");
+        // sin throw — dejás que CUP maneje el flujo
     }
-:}
+:};
 
 terminal kwIf, kwElse, kwFor, kwBreak, kwContinue, kwVar, kwFunc, kwNil, kwRange;
 terminal kwTrue, kwFalse;
@@ -75,7 +89,7 @@ precedence left dot, lbracket, rbracket, lparen, rparen;
 start with INICIO;
 
 INICIO ::= INSTRUCCIONES:i
-    {: RESULT = i; :}
+    {:parser.partialAst = i; RESULT = i; :}
 ;
 
 INSTRUCCIONES ::= INSTRUCCIONES:is INSTRUCCION:i
@@ -157,6 +171,12 @@ INSTRUCCION ::=
     {: RESULT = new Statments(); :}
     | error scol
     {: RESULT = new Statments(); :}
+    | error rparen
+    {: RESULT = new Statments(); :}
+    | error
+    {: RESULT = new Statments(); :}
+    | error OP_SCOL
+    {: RESULT = new Statments(); :}
 ;
 
 ELSE_IF_ELSE ::=
@@ -197,6 +217,12 @@ SIMPLE_STMT ::=
     {: RESULT = new MinusAssign(target, new Integers(1, targetleft, targetright), targetleft, targetright); :}
     | EXPRESION:e
     {: RESULT = new ExprStatment(e, eleft, eright); :}
+    | error
+    {: RESULT = new ExprStatment(new NilLiteral(-1, -1), -1, -1); :}
+    | kwFor:kFor SIMPLE_STMT:init scol EXPRESION:cond scol SIMPLE_STMT:incr lbrace INSTRUCCIONES:b rbrace
+    {: RESULT = new ForNode(init, cond, incr, b, kForleft, kForright); :}
+    | kwFor:kFor error lbrace INSTRUCCIONES:b rbrace
+    {: RESULT = new ForWhileNode(new BoolLiteral(true, kForleft, kForright), b, kForleft, kForright); :}
 ;
 
 ARGS ::=
@@ -204,6 +230,8 @@ ARGS ::=
     {: l.add(0, new StructLiteralNode(t, c, tleft, tright)); RESULT = l; :}
     | EXPRESION:e LISTA_ARGS:l
     {: l.add(0, e); RESULT = l; :}
+    | error
+    {: RESULT = new ArrayList<ASTNode>(); :}
     | /* vacío */
     {: RESULT = new ArrayList<ASTNode>(); :}
 ;
@@ -213,6 +241,8 @@ LISTA_ARGS ::=
     {: l.add(0, new StructLiteralNode(t, c, tleft, tright)); RESULT = l; :}
     | comma EXPRESION:e LISTA_ARGS:l
     {: l.add(0, e); RESULT = l; :}
+    | comma error
+    {: RESULT = new ArrayList<ASTNode>(); :}
     | /* vacío */
     {: RESULT = new ArrayList<ASTNode>(); :}
 ;
@@ -292,6 +322,8 @@ EXPRESION ::=
     {: RESULT = new LenNode(s, kleft, kright); :}
     | lbracket:l rbracket TYPE:t lbrace BRACE_CONTENT:c rbrace
     {: RESULT = new SliceLiteralNode("[]" + t, c, lleft, lright); :}
+    | error
+    {: RESULT = new NilLiteral(-1, -1); :}
 ;
 
 ASSIGN_VALUE ::=
@@ -301,6 +333,14 @@ ASSIGN_VALUE ::=
     {: RESULT = new BraceLiteralNode(c, lleft, lright); :}
     | EXPRESION:e
     {: RESULT = e; :}
+    | error rparen
+    {: RESULT = new NilLiteral(-1, -1); :}
+    | error scol
+    {: RESULT = new NilLiteral(-1, -1); :}
+    | error comma
+    {: RESULT = new NilLiteral(-1, -1); :}
+    | error
+    {: RESULT = new NilLiteral(-1, -1); :}
 ;
 
 NON_ID_TYPE ::= kwInt    {: RESULT = "int"; :}
@@ -334,7 +374,7 @@ PARAM ::= id:name TYPE:t
 PARAMS ::= PARAM:p PARAM_LIST:l
     {: l.add(0, p); RESULT = l; :}
     | /* vacío */
-    {: RESULT = new ArrayList<Param>(); :}
+    {: ArrayList<Param> emptyParams = new ArrayList<>(); RESULT = emptyParams; :}
 ;
 
 PARAM_LIST ::= comma PARAM:p PARAM_LIST:l
@@ -359,6 +399,9 @@ BRACE_ELEMENT ::= EXPRESION:e
 
 BRACE_CONTENT ::= BRACE_ELEMENT:e BRACE_LIST:l
     {: l.add(0, e); RESULT = l; :}
+    // MODO PÁNICO: Si hay un error al inicializar un struct/array literal (ej: MiStruct{1, if, 3}), se recupera buscando la '}'
+    | error
+    {: RESULT = new ArrayList<ASTNode>(); :}
     | /* vacío */
     {: RESULT = new ArrayList<ASTNode>(); :}
 ;

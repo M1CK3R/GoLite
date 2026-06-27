@@ -12,11 +12,15 @@ import com.olc1.visitor.Visitor;
 import com.olc1.visitor.interpreter.value.*;
 import com.olc1.reports.SymbolEntry;
 import com.olc1.reports.ErrorCollector;
+import com.olc1.reports.GoLiteRuntimeError;
+import com.olc1.reports.GoLiteError;
 
 public class InterpreterVisitor implements Visitor<ValueWrapper> {
     public String output = "";
     public final List<SymbolEntry> symbolTable = new ArrayList<>();
     private final ValueWrapper defaultVoid = new VoidValue(-1, -1);
+    public final List<GoLiteError> errors = new ArrayList<>();
+    private int loopDepth = 0;
 
     public static class Environment {
         private final Environment parent;
@@ -66,7 +70,8 @@ public class InterpreterVisitor implements Visitor<ValueWrapper> {
             normalizedTipoDato = "Slice";
         }
         for (SymbolEntry entry : symbolTable) {
-            if (entry.getId().equals(id) && entry.getAmbito().equals(ambito) && entry.getLine() == line && entry.getColumn() == column) {
+            if (entry.getId().equals(id) && entry.getAmbito().equals(ambito) && entry.getLine() == line
+                    && entry.getColumn() == column) {
                 return;
             }
         }
@@ -86,37 +91,42 @@ public class InterpreterVisitor implements Visitor<ValueWrapper> {
     }
 
     private ValueWrapper createDefaultValue(String type, int line, int column) {
-        if (type == null)
-            return defaultVoid;
-        if (type.startsWith("[]")) {
-            String elemType = type.substring(2);
-            return new SliceValue(elemType, line, column);
+        switch (type) {
+            case "int":
+                return new IntValue(0, line, column);
+            case "float64":
+                return new DecimalValue(0.0, line, column);
+            case "string":
+                return new StringValue("", line, column);
+            case "bool":
+                return new BoolValue(false, line, column);
+            case "rune":
+                return new RuneValue((char) 0, line, column);
+            default:
+                // Si el tipo existe en tu mapa de structs (es un struct personalizado)
+                if (structsMap.containsKey(type)) {
+                    StructDeclNode.Context structDecl = structsMap.get(type);
+                    StructValue structVal = new StructValue(type, line, column);
+
+                    for (var field : structDecl.fields) {
+                        if (structsMap.containsKey(field.type())) {
+                            structVal.fields().put(field.name(), defaultVoid);
+                        } else {
+                            structVal.fields().put(field.name(), createDefaultValue(field.type(), line, column));
+                        }
+                    }
+                    return structVal;
+                }
+                return defaultVoid;
         }
-        return switch (type) {
-            case "int" -> new IntValue(0, line, column);
-            case "float64" -> new DecimalValue(0.0, line, column);
-            case "bool" -> new BoolValue(false, line, column);
-            case "string" -> new StringValue("", line, column);
-            case "rune" -> new IntValue(0, line, column);
-            default -> {
-                StructDeclNode.Context structDecl = structsMap.get(type);
-                if (structDecl == null) {
-                    throw new RuntimeException("Tipo desconocido: " + type);
-                }
-                StructValue structVal = new StructValue(type, line, column);
-                for (FieldDecl field : structDecl.fields) {
-                    structVal.fields().put(field.name(), createDefaultValue(field.type(), line, column));
-                }
-                yield structVal;
-            }
-        };
     }
 
     private ValueWrapper evaluateBraceLiteral(List<ASTNode> elements, String type, int line, int column) {
         if (type == null) {
             boolean isStruct = elements.stream().anyMatch(e -> e instanceof FieldInit);
             if (isStruct) {
-                throw new RuntimeException("No se puede inferir el tipo del struct literal sin contexto de tipo");
+                throw new GoLiteRuntimeError("No se puede inferir el tipo del struct literal sin contexto de tipo",
+                        line, column);
             } else {
                 String elemType = "int";
                 if (!elements.isEmpty()) {
@@ -148,7 +158,7 @@ public class InterpreterVisitor implements Visitor<ValueWrapper> {
 
         StructDeclNode.Context structDecl = structsMap.get(type);
         if (structDecl == null) {
-            throw new RuntimeException("Struct no definido: " + type);
+            throw new GoLiteRuntimeError("Struct no definido: " + type, line, column);
         }
         StructValue structVal = new StructValue(type, line, column);
         for (FieldDecl f : structDecl.fields) {
@@ -161,7 +171,9 @@ public class InterpreterVisitor implements Visitor<ValueWrapper> {
                 FieldDecl fDecl = structDecl.fields.stream()
                         .filter(f -> f.name().equals(fi.name()))
                         .findFirst()
-                        .orElseThrow(() -> new RuntimeException("Campo " + fi.name() + " no existe en struct " + type));
+                        .orElseThrow(
+                                () -> new GoLiteRuntimeError("Campo " + fi.name() + " no existe en struct " + type,
+                                        line, column));
                 String prevExpected = this.expectedType;
                 this.expectedType = fDecl.type();
                 try {
@@ -171,7 +183,7 @@ public class InterpreterVisitor implements Visitor<ValueWrapper> {
                 }
             } else {
                 if (i >= structDecl.fields.size()) {
-                    throw new RuntimeException("Demasiados valores para inicializar struct " + type);
+                    throw new GoLiteRuntimeError("Demasiados valores para inicializar struct " + type, line, column);
                 }
                 FieldDecl fDecl = structDecl.fields.get(i);
                 String prevExpected = this.expectedType;
@@ -189,34 +201,38 @@ public class InterpreterVisitor implements Visitor<ValueWrapper> {
     private void assignToTarget(ASTNode target, ValueWrapper value) {
         if (target instanceof VarRef vr) {
             if (!currentEnvironment.assign(vr.getName(), value)) {
-                throw new RuntimeException("Variable no declarada: " + vr.getName());
+                throw new GoLiteRuntimeError("Variable no declarada: " + vr.getName(), vr.getLine(), vr.getColumn());
             }
         } else if (target instanceof FieldAccessNode fa) {
             ValueWrapper structVal = Visit(fa.getTarget());
             if (structVal instanceof StructValue sv) {
                 if (!sv.fields().containsKey(fa.getField())) {
-                    throw new RuntimeException("Campo " + fa.getField() + " no existe en struct " + sv.getTypeName());
+                    throw new GoLiteRuntimeError("Campo " + fa.getField() + " no existe en struct " + sv.getTypeName(),
+                            fa.getLine(), fa.getColumn());
                 }
                 sv.fields().put(fa.getField(), value);
             } else {
-                throw new RuntimeException(
-                        "El objetivo del acceso a campo no es un struct: " + structVal.getTypeName());
+                throw new GoLiteRuntimeError(
+                        "El objetivo del acceso a campo no es un struct: " + structVal.getTypeName(), fa.getLine(),
+                        fa.getColumn());
             }
         } else if (target instanceof SliceAccessNode sa) {
             ValueWrapper sliceVal = Visit(sa.getTarget());
             if (sliceVal instanceof SliceValue sv) {
                 ValueWrapper idxVal = Visit(sa.getIndex());
                 if (!(idxVal instanceof IntValue iv)) {
-                    throw new RuntimeException("Índice de slice debe ser entero");
+                    throw new GoLiteRuntimeError("Índice de slice debe ser entero", sa.getLine(), sa.getColumn());
                 }
                 int idx = iv.value();
                 if (idx < 0 || idx >= sv.getElements().size()) {
-                    throw new RuntimeException(
-                            "Índice fuera de rango: " + idx + " (tamaño " + sv.getElements().size() + ")");
+                    throw new GoLiteRuntimeError(
+                            "Índice fuera de rango: " + idx + " (tamaño " + sv.getElements().size() + ")", sa.getLine(),
+                            sa.getColumn());
                 }
                 sv.getElements().set(idx, value);
             } else {
-                throw new RuntimeException("El objetivo de la indexación no es un slice: " + sliceVal.getTypeName());
+                throw new GoLiteRuntimeError("El objetivo de la indexación no es un slice: " + sliceVal.getTypeName(),
+                        sa.getLine(), sa.getColumn());
             }
         } else {
             throw new RuntimeException("LHS de asignación inválido");
@@ -309,7 +325,44 @@ public class InterpreterVisitor implements Visitor<ValueWrapper> {
 
     @Override
     public ValueWrapper visit(StringLiteral.Context ctx) {
-        return new StringValue(ctx.value, ctx.line, ctx.column);
+        String processed = processEscapes(ctx.value);
+        return new StringValue(processed, ctx.line, ctx.column);
+    }
+
+    private String processEscapes(String s) {
+        StringBuilder sb = new StringBuilder();
+        int i = 0;
+        while (i < s.length()) {
+            if (s.charAt(i) == '\\' && i + 1 < s.length()) {
+                char next = s.charAt(i + 1);
+                switch (next) {
+                    case 't':
+                        sb.append('\t');
+                        break;
+                    case 'n':
+                        sb.append('\n');
+                        break;
+                    case 'r':
+                        sb.append('\r');
+                        break;
+                    case '"':
+                        sb.append('"');
+                        break;
+                    case '\\':
+                        sb.append('\\');
+                        break;
+                    default:
+                        sb.append('\\');
+                        sb.append(next);
+                        break;
+                }
+                i += 2;
+            } else {
+                sb.append(s.charAt(i));
+                i++;
+            }
+        }
+        return sb.toString();
     }
 
     @Override
@@ -404,7 +457,8 @@ public class InterpreterVisitor implements Visitor<ValueWrapper> {
         return switch (operand) {
             case IntValue v -> new IntValue(-v.value(), v.line(), v.column());
             case DecimalValue v -> new DecimalValue(-v.value(), v.line(), v.column());
-            default -> throw new RuntimeException("Operacion invalida: -" + operand.getTypeName());
+            default -> throw new GoLiteRuntimeError("Operacion invalida: -" + operand.getTypeName(), operand.line(),
+                    operand.column());
         };
     }
 
@@ -440,15 +494,18 @@ public class InterpreterVisitor implements Visitor<ValueWrapper> {
             return new BoolValue(intCmp.test((int) l.value(), r.value()), l.line(), l.column());
         if (left instanceof IntValue l && right instanceof RuneValue r)
             return new BoolValue(intCmp.test(l.value(), (int) r.value()), l.line(), l.column());
-        throw new RuntimeException("Operacion invalida: " + left.getTypeName() + " " + op + " " + right.getTypeName());
+        throw new RuntimeException(
+                "Operacion invalida: " + left.getTypeName() + " " + op + " " + right.getTypeName());
     }
 
     private boolean isEqual(ValueWrapper left, ValueWrapper right) {
+        if (left instanceof VoidValue && right instanceof VoidValue) {
+            return true;
+        }
+        if (left instanceof VoidValue || right instanceof VoidValue) {
+            return false;
+        }
         if (left instanceof IntValue l && right instanceof IntValue r)
-            return l.value() == r.value();
-        if (left instanceof IntValue l && right instanceof DecimalValue r)
-            return l.value() == r.value();
-        if (left instanceof DecimalValue l && right instanceof IntValue r)
             return l.value() == r.value();
         if (left instanceof DecimalValue l && right instanceof DecimalValue r)
             return l.value() == r.value();
@@ -458,10 +515,9 @@ public class InterpreterVisitor implements Visitor<ValueWrapper> {
             return l.value().equals(r.value());
         if (left instanceof RuneValue l && right instanceof RuneValue r)
             return l.value() == r.value();
-        if (left instanceof RuneValue l && right instanceof IntValue r)
-            return (int) l.value() == r.value();
-        if (left instanceof IntValue l && right instanceof RuneValue r)
-            return l.value() == (int) r.value();
+        if (left instanceof StructValue l && right instanceof StructValue r) {
+            return l == r;
+        }
         throw new RuntimeException("Operacion invalida: " + left.getTypeName() + " == " + right.getTypeName());
     }
 
@@ -469,19 +525,76 @@ public class InterpreterVisitor implements Visitor<ValueWrapper> {
     public ValueWrapper visit(Equ.Context ctx) {
         ValueWrapper left = Visit(ctx.left);
         ValueWrapper right = Visit(ctx.right);
-        return new BoolValue(isEqual(left, right), left.line(), left.column());
+
+        // Manejar nil (VoidValue)
+        if (left instanceof VoidValue && right instanceof VoidValue) {
+            return new BoolValue(true, left.line(), left.column());
+        }
+        if (left instanceof VoidValue || right instanceof VoidValue) {
+            return new BoolValue(false, left.line(), left.column());
+        }
+
+        return switch (left) {
+            // int == int
+            case IntValue l when right instanceof IntValue r ->
+                new BoolValue(l.value() == r.value(), l.line(), l.column());
+            // int == float64 ← este es el que te faltaba
+            case IntValue l when right instanceof DecimalValue r ->
+                new BoolValue(l.value() == r.value(), l.line(), l.column());
+            // float64 == int ← y este
+            case DecimalValue l when right instanceof IntValue r ->
+                new BoolValue(l.value() == r.value(), l.line(), l.column());
+            // float64 == float64
+            case DecimalValue l when right instanceof DecimalValue r ->
+                new BoolValue(l.value() == r.value(), l.line(), l.column());
+            // bool == bool
+            case BoolValue l when right instanceof BoolValue r ->
+                new BoolValue(l.value() == r.value(), l.line(), l.column());
+            // string == string
+            case StringValue l when right instanceof StringValue r ->
+                new BoolValue(l.value().equals(r.value()), l.line(), l.column());
+            // rune == rune
+            case RuneValue l when right instanceof RuneValue r ->
+                new BoolValue(l.value() == r.value(), l.line(), l.column());
+            default ->
+                throw new RuntimeException("Operacion invalida: "
+                        + left.getTypeName() + " == " + right.getTypeName());
+        };
     }
 
     @Override
     public ValueWrapper visit(Nequ.Context ctx) {
         ValueWrapper left = Visit(ctx.left);
         ValueWrapper right = Visit(ctx.right);
-        // similar a Eq pero negado
-        ValueWrapper eq = visit(new Equ.Context(new Equ(ctx.left, ctx.right)));
-        if (eq instanceof BoolValue b) {
-            return new BoolValue(!b.value(), b.line(), b.column());
+
+        // Manejar nil (VoidValue)
+        if (left instanceof VoidValue && right instanceof VoidValue) {
+            return new BoolValue(false, left.line(), left.column()); // nil != nil -> false
         }
-        throw new RuntimeException("Error en comparación !=");
+        if (left instanceof VoidValue || right instanceof VoidValue) {
+            return new BoolValue(true, left.line(), left.column()); // nil != valor -> true
+        }
+        return switch (left) {
+            case IntValue l when right instanceof IntValue r ->
+                new BoolValue(l.value() != r.value(), l.line(), l.column());
+            // int != float64
+            case IntValue l when right instanceof DecimalValue r ->
+                new BoolValue(l.value() != r.value(), l.line(), l.column());
+            // float64 != int
+            case DecimalValue l when right instanceof IntValue r ->
+                new BoolValue(l.value() != r.value(), l.line(), l.column());
+            case DecimalValue l when right instanceof DecimalValue r ->
+                new BoolValue(l.value() != r.value(), l.line(), l.column());
+            case BoolValue l when right instanceof BoolValue r ->
+                new BoolValue(l.value() != r.value(), l.line(), l.column());
+            case StringValue l when right instanceof StringValue r ->
+                new BoolValue(!l.value().equals(r.value()), l.line(), l.column());
+            case RuneValue l when right instanceof RuneValue r ->
+                new BoolValue(l.value() != r.value(), l.line(), l.column());
+            default ->
+                throw new RuntimeException("Operacion invalida: "
+                        + left.getTypeName() + " != " + right.getTypeName());
+        };
     }
 
     @Override
@@ -531,7 +644,7 @@ public class InterpreterVisitor implements Visitor<ValueWrapper> {
         ValueWrapper val = Visit(ctx.expression);
         if (val instanceof BoolValue b)
             return new BoolValue(!b.value(), b.line(), b.column());
-        throw new RuntimeException("Operacion ! requiere booleano");
+        throw new GoLiteRuntimeError("Operacion ! requiere booleano", val.line(), val.column());
     }
 
     // Expresion de agrupacion
@@ -547,7 +660,7 @@ public class InterpreterVisitor implements Visitor<ValueWrapper> {
     public ValueWrapper visit(VarRef.Context ctx) {
         ValueWrapper val = currentEnvironment.get(ctx.name);
         if (val == null)
-            throw new RuntimeException("Variable no definida: " + ctx.name);
+            throw new GoLiteRuntimeError("Variable no definida: " + ctx.name, ctx.line, ctx.column);
         return val;
     }
 
@@ -556,6 +669,11 @@ public class InterpreterVisitor implements Visitor<ValueWrapper> {
         ValueWrapper value = Visit(ctx.expression);
         output += value.toString() + "\n";
         return defaultVoid;
+    }
+
+    @Override
+    public ValueWrapper visit(FieldInit.Context ctx) {
+        return Visit(ctx.value);
     }
 
     // Sentencias
@@ -676,8 +794,9 @@ public class InterpreterVisitor implements Visitor<ValueWrapper> {
                 new DecimalValue(d.value() + inc.value(), d.line(), d.column());
             case StringValue s when increment instanceof StringValue inc ->
                 new StringValue(s.value() + inc.value(), s.line(), s.column());
-            default -> throw new RuntimeException(
-                    "Operacion += invalida: " + current.getTypeName() + " += " + increment.getTypeName());
+            default -> throw new GoLiteRuntimeError(
+                    "Operacion += invalida: " + current.getTypeName() + " += " + increment.getTypeName(),
+                    current.line(), current.column());
         };
         assignToTarget(ctx.target, result);
         return defaultVoid;
@@ -702,8 +821,9 @@ public class InterpreterVisitor implements Visitor<ValueWrapper> {
                 new DecimalValue(d.value() - dec.value(), d.line(), d.column());
             case DecimalValue d when decrement instanceof DecimalValue dec ->
                 new DecimalValue(d.value() - dec.value(), d.line(), d.column());
-            default -> throw new RuntimeException(
-                    "Operacion -= invalida: " + current.getTypeName() + " -= " + decrement.getTypeName());
+            default -> throw new GoLiteRuntimeError(
+                    "Operacion -= invalida: " + current.getTypeName() + " -= " + decrement.getTypeName(),
+                    current.line(), current.column());
         };
         assignToTarget(ctx.target, result);
         return defaultVoid;
@@ -745,7 +865,7 @@ public class InterpreterVisitor implements Visitor<ValueWrapper> {
         int size = 0;
         List<ValueWrapper> elements = null;
         String strVal = null;
-        
+
         if (collVal instanceof SliceValue sv) {
             elemType = sv.getElementType();
             elements = sv.getElements();
@@ -755,7 +875,7 @@ public class InterpreterVisitor implements Visitor<ValueWrapper> {
             strVal = sv.value();
             size = strVal.length();
         } else {
-            throw new RuntimeException("Se requiere un slice o string para usar range");
+            throw new GoLiteRuntimeError("Se requiere un slice o string para usar range", ctx.line, ctx.column);
         }
 
         Environment oldEnv = currentEnvironment;
@@ -787,7 +907,7 @@ public class InterpreterVisitor implements Visitor<ValueWrapper> {
                         currentEnvironment.define(ctx.indexId, idxVal);
                     } else {
                         if (!currentEnvironment.assign(ctx.indexId, idxVal)) {
-                            throw new RuntimeException("Variable no definida: " + ctx.indexId);
+                            throw new GoLiteRuntimeError("Variable no definida: " + ctx.indexId, ctx.line, ctx.column);
                         }
                     }
                 }
@@ -796,7 +916,7 @@ public class InterpreterVisitor implements Visitor<ValueWrapper> {
                         currentEnvironment.define(ctx.valueId, valVal);
                     } else {
                         if (!currentEnvironment.assign(ctx.valueId, valVal)) {
-                            throw new RuntimeException("Variable no definida: " + ctx.valueId);
+                            throw new GoLiteRuntimeError("Variable no definida: " + ctx.valueId, ctx.line, ctx.column);
                         }
                     }
                 }
@@ -821,6 +941,7 @@ public class InterpreterVisitor implements Visitor<ValueWrapper> {
     public ValueWrapper visit(ForNode.Context ctx) {
         Environment oldEnv = currentEnvironment;
         currentEnvironment = new Environment(oldEnv);
+        loopDepth++;
         try {
             if (ctx.init != null)
                 Visit(ctx.init);
@@ -839,6 +960,7 @@ public class InterpreterVisitor implements Visitor<ValueWrapper> {
                     Visit(ctx.increment);
             }
         } finally {
+            loopDepth--;
             currentEnvironment = oldEnv;
         }
         return defaultVoid;
@@ -863,11 +985,19 @@ public class InterpreterVisitor implements Visitor<ValueWrapper> {
 
     @Override
     public ValueWrapper visit(BreakNode.Context ctx) {
+        if (loopDepth == 0) {
+            ErrorCollector.addError("semántico", "break fuera de bucle", ctx.line, ctx.column);
+            return defaultVoid;
+        }
         throw new BreakException();
     }
 
     @Override
     public ValueWrapper visit(ContinueNode.Context ctx) {
+        if (loopDepth == 0) {
+            ErrorCollector.addError("semántico", "continue fuera de bucle", ctx.line, ctx.column);
+            return defaultVoid;
+        }
         throw new ContinueException();
     }
 
@@ -882,10 +1012,14 @@ public class InterpreterVisitor implements Visitor<ValueWrapper> {
     public ValueWrapper visit(FmtPrintln.Context ctx) {
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < ctx.args.size(); i++) {
-            ValueWrapper val = Visit(ctx.args.get(i));
             if (i > 0)
                 sb.append(" ");
-            sb.append(val.toString());
+            ValueWrapper val = Visit(ctx.args.get(i));
+            if (val instanceof VoidValue) {
+                sb.append("nil");
+            } else {
+                sb.append(val.toString());
+            }
         }
         output += sb.toString() + "\n";
         return defaultVoid;
@@ -899,10 +1033,11 @@ public class InterpreterVisitor implements Visitor<ValueWrapper> {
                 int num = Integer.parseInt(s.value());
                 return new IntValue(num, s.line(), s.column());
             } catch (NumberFormatException e) {
-                throw new RuntimeException("strconv.Atoi: no se pudo convertir '" + s.value() + "' a entero");
+                throw new GoLiteRuntimeError("strconv.Atoi: no se pudo convertir '" + s.value() + "' a entero",
+                        s.line(), s.column());
             }
         }
-        throw new RuntimeException("strconv.Atoi espera un string");
+        throw new GoLiteRuntimeError("strconv.Atoi espera un string", arg.line(), arg.column());
     }
 
     @Override
@@ -913,10 +1048,11 @@ public class InterpreterVisitor implements Visitor<ValueWrapper> {
                 double num = Double.parseDouble(s.value());
                 return new DecimalValue(num, s.line(), s.column());
             } catch (NumberFormatException e) {
-                throw new RuntimeException("strconv.ParseFloat: no se pudo convertir '" + s.value() + "' a float64");
+                throw new GoLiteRuntimeError("strconv.ParseFloat: no se pudo convertir '" + s.value() + "' a float64",
+                        s.line(), s.column());
             }
         }
-        throw new RuntimeException("strconv.ParseFloat espera un string");
+        throw new GoLiteRuntimeError("strconv.ParseFloat espera un string", arg.line(), arg.column());
     }
 
     @Override
@@ -971,14 +1107,16 @@ public class InterpreterVisitor implements Visitor<ValueWrapper> {
     @Override
     public ValueWrapper visit(FuncDeclNode.Context ctx) {
         funcsMap.put(ctx.name, ctx);
-        addSymbol(ctx.name, ctx.returnType == null ? "Procedimiento" : "Función", ctx.returnType == null ? "void" : ctx.returnType, "Global", ctx.line, ctx.column);
+        addSymbol(ctx.name, ctx.returnType == null ? "Procedimiento" : "Función",
+                ctx.returnType == null ? "void" : ctx.returnType, "Global", ctx.line, ctx.column);
         return defaultVoid;
     }
 
     @Override
     public ValueWrapper visit(MethodDeclNode.Context ctx) {
         methodsMap.put(ctx.receiver.type() + "#" + ctx.name, ctx);
-        addSymbol(ctx.name, ctx.returnType == null ? "Procedimiento" : "Función", ctx.returnType == null ? "void" : ctx.returnType, "Global", ctx.line, ctx.column);
+        addSymbol(ctx.name, ctx.returnType == null ? "Procedimiento" : "Función",
+                ctx.returnType == null ? "void" : ctx.returnType, "Global", ctx.line, ctx.column);
         return defaultVoid;
     }
 
@@ -999,7 +1137,7 @@ public class InterpreterVisitor implements Visitor<ValueWrapper> {
     public ValueWrapper visit(FuncCallNode.Context ctx) {
         FuncDeclNode.Context func = funcsMap.get(ctx.name);
         if (func == null) {
-            throw new RuntimeException("Función no definida: " + ctx.name);
+            throw new GoLiteRuntimeError("Función no definida: " + ctx.name, ctx.line, ctx.column);
         }
         List<ValueWrapper> argsVal = new ArrayList<>();
         for (ASTNode arg : ctx.args) {
@@ -1014,7 +1152,8 @@ public class InterpreterVisitor implements Visitor<ValueWrapper> {
         String recType = receiverVal.getTypeName();
         MethodDeclNode.Context method = methodsMap.get(recType + "#" + ctx.name);
         if (method == null) {
-            throw new RuntimeException("Método " + ctx.name + " no definido para tipo " + recType);
+            throw new GoLiteRuntimeError("Método " + ctx.name + " no definido para tipo " + recType, ctx.line,
+                    ctx.column);
         }
         List<ValueWrapper> argsVal = new ArrayList<>();
         for (ASTNode arg : ctx.args) {
@@ -1028,11 +1167,13 @@ public class InterpreterVisitor implements Visitor<ValueWrapper> {
         ValueWrapper targetVal = Visit(ctx.target);
         if (targetVal instanceof StructValue sv) {
             if (!sv.fields().containsKey(ctx.field)) {
-                throw new RuntimeException("Campo " + ctx.field + " no existe en struct " + sv.getTypeName());
+                throw new GoLiteRuntimeError("Campo " + ctx.field + " no existe en struct " + sv.getTypeName(),
+                        ctx.line, ctx.column);
             }
             return sv.fields().get(ctx.field);
         }
-        throw new RuntimeException("Acceso a campo inválido en tipo " + targetVal.getTypeName());
+        throw new GoLiteRuntimeError("Acceso a campo inválido en tipo " + targetVal.getTypeName(), ctx.line,
+                ctx.column);
     }
 
     @Override
@@ -1041,16 +1182,17 @@ public class InterpreterVisitor implements Visitor<ValueWrapper> {
         if (targetVal instanceof SliceValue sv) {
             ValueWrapper idxVal = Visit(ctx.index);
             if (!(idxVal instanceof IntValue iv)) {
-                throw new RuntimeException("Índice de slice debe ser entero");
+                throw new GoLiteRuntimeError("Índice de slice debe ser entero", ctx.line, ctx.column);
             }
             int idx = iv.value();
             if (idx < 0 || idx >= sv.getElements().size()) {
-                throw new RuntimeException(
-                        "Índice fuera de rango: " + idx + " (tamaño " + sv.getElements().size() + ")");
+                throw new GoLiteRuntimeError(
+                        "Índice fuera de rango: " + idx + " (tamaño " + sv.getElements().size() + ")", ctx.line,
+                        ctx.column);
             }
             return sv.getElements().get(idx);
         }
-        throw new RuntimeException("Indexación inválida en tipo " + targetVal.getTypeName());
+        throw new GoLiteRuntimeError("Indexación inválida en tipo " + targetVal.getTypeName(), ctx.line, ctx.column);
     }
 
     @Override
@@ -1077,7 +1219,7 @@ public class InterpreterVisitor implements Visitor<ValueWrapper> {
             newElems.add(val);
             return new SliceValue(sv.getElementType(), newElems, ctx.line, ctx.column);
         }
-        throw new RuntimeException("append requiere un slice");
+        throw new GoLiteRuntimeError("append requiere un slice", ctx.line, ctx.column);
     }
 
     @Override
@@ -1094,7 +1236,7 @@ public class InterpreterVisitor implements Visitor<ValueWrapper> {
             }
             return new IntValue(idx, ctx.line, ctx.column);
         }
-        throw new RuntimeException("slices.Index requiere un slice");
+        throw new GoLiteRuntimeError("slices.Index requiere un slice", ctx.line, ctx.column);
     }
 
     @Override
@@ -1102,11 +1244,11 @@ public class InterpreterVisitor implements Visitor<ValueWrapper> {
         ValueWrapper sliceVal = Visit(ctx.slice);
         if (sliceVal instanceof SliceValue sv) {
             if (!sv.getElementType().equals("string")) {
-                throw new RuntimeException("strings.Join requiere un slice de strings");
+                throw new GoLiteRuntimeError("strings.Join requiere un slice de strings", ctx.line, ctx.column);
             }
             ValueWrapper sepVal = Visit(ctx.sep);
             if (!(sepVal instanceof StringValue sev)) {
-                throw new RuntimeException("strings.Join requiere un separador de tipo string");
+                throw new GoLiteRuntimeError("strings.Join requiere un separador de tipo string", ctx.line, ctx.column);
             }
             StringBuilder sb = new StringBuilder();
             for (int i = 0; i < sv.getElements().size(); i++) {
@@ -1121,7 +1263,7 @@ public class InterpreterVisitor implements Visitor<ValueWrapper> {
             }
             return new StringValue(sb.toString(), ctx.line, ctx.column);
         }
-        throw new RuntimeException("strings.Join requiere un slice");
+        throw new GoLiteRuntimeError("strings.Join requiere un slice", ctx.line, ctx.column);
     }
 
     @Override
@@ -1132,6 +1274,6 @@ public class InterpreterVisitor implements Visitor<ValueWrapper> {
         } else if (val instanceof StringValue sv) {
             return new IntValue(sv.value().length(), ctx.line, ctx.column);
         }
-        throw new RuntimeException("len requiere un slice o string");
+        throw new GoLiteRuntimeError("len requiere un slice o string", ctx.line, ctx.column);
     }
 }

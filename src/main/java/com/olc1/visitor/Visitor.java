@@ -2,6 +2,7 @@ package com.olc1.visitor;
 
 import com.olc1.ast.exp.*;
 import com.olc1.ast.stm.*;
+import com.olc1.visitor.graphviz.*;
 
 public interface Visitor<T> {
     T visit(Integers.Context ctx);
@@ -123,4 +124,6 @@ public interface Visitor<T> {
     T visit(StringsJoinNode.Context ctx);
 
     T visit(LenNode.Context ctx);
+
+    T visit(FieldInit.Context ctx);
 }

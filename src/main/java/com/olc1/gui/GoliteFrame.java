@@ -161,34 +161,60 @@ public class GoliteFrame extends JFrame {
     }
 
     private void run() {
-        cleanConsole(); // limpiamos antes de empezar
-        ErrorCollector.clear(); // limpiar errores semánticos previos
+        cleanConsole();
+        ErrorCollector.clear();
 
         currentAst = parsearCodigo(editorPanel.getText());
 
-        ASTNode ast = null;
+        // Re-parsear para tener lexer y parser frescos para el reporte de errores
         try {
             lexer = new Lexer(new BufferedReader(new StringReader(editorPanel.getText())));
             parser = new parser(lexer);
-            ast = (ASTNode) parser.parse().value;
+            parser.parse();
+
+            if (parser != null && !parser.errors.isEmpty()) {
+                consoleTextArea.append("--- Errores sintácticos ---\n");
+                for (GoLiteError err : parser.errors) {
+                    consoleTextArea.append(err.getDescription() + " (línea " + err.getLine() + ")\n");
+                }
+            }
+            if (lexer != null && !lexer.errors.isEmpty()) {
+                consoleTextArea.append("--- Errores léxicos ---\n");
+                for (GoLiteError err : lexer.errors) {
+                    consoleTextArea.append(err.getDescription() + " (línea " + err.getLine() + ")\n");
+                }
+            }
         } catch (Exception e) {
             // El parser ya registró los errores en parser.errors
-            // Si no pudo recuperarse, ast queda null
         }
 
-        // Si se logró construir un AST (parcial o completo), intentar interpretar
+        // Si se logró construir un AST, interpretar
         if (currentAst != null) {
+            interpreter = new InterpreterVisitor();
+
             try {
-                interpreter = new InterpreterVisitor();
                 interpreter.Visit(currentAst);
-                consoleTextArea.append(interpreter.output);
             } catch (Exception e) {
-                ErrorCollector.addError("semántico", e.getMessage(), 0, 0);
-                if (interpreter != null && !interpreter.output.isEmpty()) {
+                // Solo llega aquí si hay un error que el modo pánico no atrapó
+                ErrorCollector.addError("Semántico",
+                        "Error crítico: " + e.getMessage(), 0, 0);
+            } finally {
+                // SIEMPRE mostrar el output generado hasta donde llegó
+                if (!interpreter.output.isEmpty()) {
                     consoleTextArea.append(interpreter.output);
+                }
+
+                // Pasar todos los errores del intérprete al ErrorCollector
+                for (GoLiteError error : interpreter.errors) {
+                    ErrorCollector.addError(
+                            error.getType(),
+                            error.getDescription(),
+                            error.getLine(),
+                            error.getColumn());
                 }
             }
         }
+
         consoleTextArea.setCaretPosition(consoleTextArea.getDocument().getLength());
         editorPanel.getTextArea().requestFocus();
     }
@@ -230,13 +256,18 @@ public class GoliteFrame extends JFrame {
     }
 
     private ASTNode parsearCodigo(String codigo) {
+        parser tempParser = null;
         try {
-            lexer = new Lexer(new BufferedReader(new StringReader(codigo)));
-            parser = new parser(lexer);
-            return (ASTNode) parser.parse().value;
+            Lexer tempLexer = new Lexer(new BufferedReader(new StringReader(codigo)));
+            tempParser = new parser(tempLexer);
+            ASTNode result = (ASTNode) tempParser.parse().value;
+            if (result != null)
+                return result;
         } catch (Exception e) {
-            return null;
+            // intento de recuperar el AST parcial construido hasta el error
         }
+        // si parse() falló, intentar retornar lo que alcanzó a construir
+        return (tempParser != null) ? tempParser.partialAst : null;
     }
 
     private void symbolTable() {
