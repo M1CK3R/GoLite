@@ -1,4 +1,4 @@
-# EJ26_OLC1_202405365
+# GoLite
 
 ## Descripción General
 
